@@ -483,7 +483,7 @@ Callable[[], None]
             false,
         );
 
-        let rendered = render_module(mod_documentation, &ZolaRenderer::new());
+        let rendered = render_module(mod_documentation, &ZolaRenderer::new(false));
 
         assert_eq!(rendered, expected_module_docs_zola_rendered());
 

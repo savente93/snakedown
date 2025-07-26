@@ -82,7 +82,7 @@ impl ConfigBuilder {
     pub fn build(self) -> Result<Config> {
         let renderer: Box<dyn Renderer> = match self.ssg {
             Some(SSG::Markdown) | None => Box::new(MdRenderer::new()),
-            Some(SSG::Zola) => Box::new(ZolaRenderer::new()),
+            Some(SSG::Zola) => Box::new(ZolaRenderer::new(false)),
         };
 
         Ok(Config {
