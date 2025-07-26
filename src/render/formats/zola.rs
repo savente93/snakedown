@@ -92,6 +92,15 @@ mod test {
     }
 
     #[test]
+    fn zola_internal_link_no_shortcode() -> Result<()> {
+        assert_eq!(
+            ZolaRenderer::new(false)
+                .render_internal_ref("Baz".to_string(), PathBuf::from("foo/bar/baz/index.md"))?,
+            r#"[Baz](@/foo/bar/baz/index.md)"#
+        );
+        Ok(())
+    }
+    #[test]
     fn zola_external_link_no_shortcode() -> Result<()> {
         assert_eq!(
             ZolaRenderer::new(false).render_external_ref(
@@ -103,6 +112,16 @@ mod test {
         );
         Ok(())
     }
+    #[test]
+    fn zola_internal_link_with_shortcode() -> Result<()> {
+        assert_eq!(
+            ZolaRenderer::new(true)
+                .render_internal_ref("Baz".to_string(), PathBuf::from("foo/bar/baz/index.md"))?,
+            r#"{{ snakedown_internal_ref(text="Baz", path="@/foo/bar/baz/index.md") }}"#
+        );
+        Ok(())
+    }
+
     #[test]
     fn zola_external_link_with_shortcode() -> Result<()> {
         assert_eq!(
