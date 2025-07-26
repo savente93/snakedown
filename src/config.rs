@@ -1,10 +1,12 @@
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fs::File,
     io::{Read, Write},
     path::{Path, PathBuf},
 };
+use url::Url;
 
 use crate::render::{
     SSG,
@@ -16,8 +18,9 @@ pub struct Config {
     pub pkg_path: PathBuf,
     pub skip_undoc: bool,
     pub skip_private: bool,
-    pub exclude: Vec<PathBuf>,
     pub renderer: Box<dyn Renderer>,
+    pub exclude: Vec<PathBuf>,
+    pub externals: HashMap<String, Url>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
@@ -36,12 +39,25 @@ pub struct ConfigBuilder {
     pkg_path: Option<PathBuf>,
     skip_undoc: Option<bool>,
     skip_private: Option<bool>,
-    exclude: Option<Vec<PathBuf>>,
     ssg: Option<SSG>,
     render: Option<RenderConfig>,
+    exclude: Option<Vec<PathBuf>>,
+    externals: Option<HashMap<String, String>>,
 }
 
 impl ConfigBuilder {
+    pub fn init_with_defaults(mut self) -> Self {
+        self = self
+            .with_output_dir(Some(PathBuf::from("_build")))
+            .with_skip_undoc(Some(true))
+            .with_skip_private(Some(false))
+            .with_pkg_path(Some(PathBuf::from(".")))
+            .with_exclude(Some(Vec::new()))
+            .with_ssg(Some(SSG::Markdown))
+            .with_externals(Some(HashMap::new()));
+
+        self
+    }
     pub fn with_output_dir(mut self, output_dir: Option<PathBuf>) -> Self {
         if output_dir.is_some() {
             self.output_dir = output_dir;
@@ -84,6 +100,23 @@ impl ConfigBuilder {
         }
         self
     }
+    pub fn add_external(&mut self, name: String, link: String) -> Result<()> {
+        if self.externals.is_none() {
+            self.externals = Some(HashMap::new());
+        }
+
+        let externals = self.externals.get_or_insert_default();
+
+        externals.insert(name, link);
+
+        Ok(())
+    }
+    pub fn with_externals(mut self, externals: Option<HashMap<String, String>>) -> Self {
+        if externals.is_some() {
+            self.externals = externals
+        }
+        self
+    }
     pub fn with_ssg(mut self, ssg: Option<SSG>) -> Self {
         if ssg.is_some() {
             self.ssg = ssg;
@@ -100,6 +133,15 @@ impl ConfigBuilder {
             }
         };
 
+        let mut external_linkings = HashMap::new();
+
+        if let Some(external_links) = self.externals {
+            for (name, link) in external_links {
+                let url = Url::parse(&link)?;
+                external_linkings.insert(name, url);
+            }
+        }
+
         Ok(Config {
             output_dir: self.output_dir.unwrap_or(PathBuf::from("_build")),
             pkg_path: self.pkg_path.unwrap_or(PathBuf::from(".")),
@@ -107,6 +149,7 @@ impl ConfigBuilder {
             skip_private: self.skip_private.unwrap_or(false),
             exclude: self.exclude.unwrap_or_default(),
             renderer,
+            externals: external_linkings,
         })
     }
 

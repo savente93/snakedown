@@ -1,5 +1,4 @@
 use std::{
-    env,
     fs::{create_dir_all, exists},
     path::PathBuf,
 };
@@ -9,10 +8,7 @@ use color_eyre::Result;
 /// `$HOME/.snakedown/cache` if $HOME exists and `./.shakedown/cache` else
 // TODO: start tying different combinations of XDG_CACHE_HOME and APPDIR where appropriate
 pub fn get_cache_path() -> PathBuf {
-    env::home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".snakedown")
-        .join("cache")
+    PathBuf::from(".").join(".snakedown").join("cache")
 }
 
 /// checks if cache exists at the path returned by `get_cache_path` if so that is returned
