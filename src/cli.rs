@@ -97,6 +97,10 @@ pub struct Args {
     /// What format to render the front matter in, (zola, hugo, plain markdown, etc.)
     #[arg(short, long, value_enum)]
     pub ssg: Option<SSG>,
+
+    /// Link to external documentation to link to. should be in the form of name=<link>
+    #[arg(long)]
+    pub externals: Option<Vec<String>>,
 }
 
 #[cfg(test)]

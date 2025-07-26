@@ -1,0 +1,8 @@
+output_dir = "_build"
+pkg_path = "."
+skip_undoc = true
+skip_private = false
+ssg = "markdown"
+exclude = []
+
+[externals]
