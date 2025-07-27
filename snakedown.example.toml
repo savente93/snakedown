@@ -2,7 +2,11 @@ output_dir = "_build"
 pkg_path = "."
 skip_undoc = true
 skip_private = false
-ssg = "markdown"
+ssg = "Markdown"
 exclude = []
 
 [externals]
+builtins = {name = "Python", url = "https://docs.python.org/3/"}
+
+[render.zola]
+use_shortcodes = true

@@ -43,6 +43,7 @@ impl Renderer for MdRenderer {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
     use std::path::PathBuf;
 
     use color_eyre::Result;

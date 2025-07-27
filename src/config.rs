@@ -13,6 +13,12 @@ use crate::render::{
     formats::{Renderer, md::MdRenderer, zola::ZolaRenderer},
 };
 
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+pub struct ExternalIndex {
+    name: Option<String>,
+    url: String,
+}
+
 pub struct Config {
     pub output_dir: PathBuf,
     pub pkg_path: PathBuf,
@@ -42,11 +48,19 @@ pub struct ConfigBuilder {
     ssg: Option<SSG>,
     render: Option<RenderConfig>,
     exclude: Option<Vec<PathBuf>>,
-    externals: Option<HashMap<String, String>>,
+    externals: Option<HashMap<String, ExternalIndex>>,
 }
 
 impl ConfigBuilder {
     pub fn init_with_defaults(mut self) -> Self {
+        let mut externals = HashMap::new();
+        externals.insert(
+            "builtins".to_string(),
+            ExternalIndex {
+                name: Some("Python".to_string()),
+                url: "https://docs.python.org/3/".to_string(),
+            },
+        );
         self = self
             .with_output_dir(Some(PathBuf::from("_build")))
             .with_skip_undoc(Some(true))
@@ -54,8 +68,19 @@ impl ConfigBuilder {
             .with_pkg_path(Some(PathBuf::from(".")))
             .with_exclude(Some(Vec::new()))
             .with_ssg(Some(SSG::Markdown))
-            .with_externals(Some(HashMap::new()));
+            .with_externals(Some(externals))
+            .with_render_config(Some(RenderConfig {
+                zola: Some(ZolaConfig {
+                    use_shortcodes: true,
+                }),
+            }));
 
+        self
+    }
+    pub fn with_render_config(mut self, render_config: Option<RenderConfig>) -> Self {
+        if render_config.is_some() {
+            self.render = render_config;
+        }
         self
     }
     pub fn with_output_dir(mut self, output_dir: Option<PathBuf>) -> Self {
@@ -100,18 +125,20 @@ impl ConfigBuilder {
         }
         self
     }
-    pub fn add_external(&mut self, name: String, link: String) -> Result<()> {
+    pub fn add_external(&mut self, key: String, name: Option<String>, link: String) -> Result<()> {
         if self.externals.is_none() {
             self.externals = Some(HashMap::new());
         }
 
         let externals = self.externals.get_or_insert_default();
 
-        externals.insert(name, link);
+        let external_index = ExternalIndex { name, url: link };
+
+        externals.insert(key, external_index);
 
         Ok(())
     }
-    pub fn with_externals(mut self, externals: Option<HashMap<String, String>>) -> Self {
+    pub fn with_externals(mut self, externals: Option<HashMap<String, ExternalIndex>>) -> Self {
         if externals.is_some() {
             self.externals = externals
         }
@@ -136,8 +163,8 @@ impl ConfigBuilder {
         let mut external_linkings = HashMap::new();
 
         if let Some(external_links) = self.externals {
-            for (name, link) in external_links {
-                let url = Url::parse(&link)?;
+            for (name, external_index) in external_links {
+                let url = Url::parse(&external_index.url)?;
                 external_linkings.insert(name, url);
             }
         }
@@ -199,6 +226,7 @@ impl ConfigBuilder {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
     use std::path::PathBuf;
 
     use crate::render::SSG;
@@ -237,6 +265,11 @@ mod test {
             .with_ssg(Some(SSG::Markdown));
 
         first.exclude_path(PathBuf::from("asdf"));
+        first.add_external(
+            "numpy".to_string(),
+            Some("Numpy".to_string()),
+            "https://numpy.org/doc/stable".to_string(),
+        )?;
 
         let second = ConfigBuilder::default()
             .with_pkg_path(Some(PathBuf::from("content")))
@@ -250,7 +283,7 @@ mod test {
             .with_exclude(Some(vec![PathBuf::from("qwert")]))
             .with_ssg(Some(SSG::Zola));
 
-        let expected = ConfigBuilder::default()
+        let mut expected = ConfigBuilder::default()
             .with_pkg_path(Some(PathBuf::from("pkg")))
             .with_output_dir(Some(PathBuf::from("_output")))
             .with_skip_undoc(Some(true))
@@ -264,8 +297,25 @@ mod test {
             .with_skip_undoc(Some(true))
             .with_ssg(Some(SSG::Zola));
 
+        expected.add_external(
+            "numpy".to_string(),
+            Some("Numpy".to_string()),
+            "https://numpy.org/doc/stable".to_string(),
+        )?;
         let computed = first.merge(second).merge(third);
         assert_eq!(expected, computed);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_deserialize_example_config() -> Result<()> {
+        let example_config = ConfigBuilder::from_path(&PathBuf::from("snakedown.example.toml"))?;
+
+        assert_eq!(
+            example_config,
+            ConfigBuilder::default().init_with_defaults()
+        );
 
         Ok(())
     }
