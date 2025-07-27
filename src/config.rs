@@ -20,6 +20,16 @@ pub struct Config {
     pub renderer: Box<dyn Renderer>,
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+pub struct RenderConfig {
+    zola: Option<ZolaConfig>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+pub struct ZolaConfig {
+    use_shortcodes: bool,
+}
+
 #[derive(Default, Serialize, Deserialize, PartialEq, Eq, Debug)]
 pub struct ConfigBuilder {
     output_dir: Option<PathBuf>,
@@ -28,6 +38,7 @@ pub struct ConfigBuilder {
     skip_private: Option<bool>,
     exclude: Option<Vec<PathBuf>>,
     ssg: Option<SSG>,
+    render: Option<RenderConfig>,
 }
 
 impl ConfigBuilder {
@@ -82,7 +93,11 @@ impl ConfigBuilder {
     pub fn build(self) -> Result<Config> {
         let renderer: Box<dyn Renderer> = match self.ssg {
             Some(SSG::Markdown) | None => Box::new(MdRenderer::new()),
-            Some(SSG::Zola) => Box::new(ZolaRenderer::new(false)),
+            Some(SSG::Zola) => {
+                let render_config = self.render.unwrap_or_default();
+                let zola_config = render_config.zola.unwrap_or_default();
+                Box::new(ZolaRenderer::new(zola_config.use_shortcodes))
+            }
         };
 
         Ok(Config {
