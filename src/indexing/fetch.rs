@@ -5,6 +5,7 @@ use std::{
 };
 
 use reqwest::Response;
+use url::Url;
 
 use crate::indexing::cache::init_cache;
 use color_eyre::Result;
@@ -29,7 +30,8 @@ pub async fn cache_remote_objects_inv(
         }
     }
 
-    let response = fetch_objects_inv_blocking(url).await?;
+    let full_url = Url::parse(url)?.join("objects.inv")?;
+    let response = fetch_objects_inv_blocking(full_url).await?;
     let data = response.bytes().await?;
 
     let mut file = File::create(cache_path)?;
@@ -38,7 +40,7 @@ pub async fn cache_remote_objects_inv(
     Ok(())
 }
 
-pub async fn fetch_objects_inv_blocking(url: &str) -> Result<Response> {
+pub async fn fetch_objects_inv_blocking(url: Url) -> Result<Response> {
     Ok(reqwest::get(url).await?)
 }
 
