@@ -122,7 +122,7 @@ pub struct ExternalSphinxRef {
     // type is a reserved keyword
     pub sphinx_type: SphinxType,
     pub priority: SphinxPriority,
-    pub location: PathBuf,
+    pub location: String,
     pub dispname: String,
 }
 
@@ -133,12 +133,18 @@ impl TryFrom<&str> for ExternalSphinxRef {
         if let Some((_whole, name, sphinx_type, priority, location, dispname)) =
             regex_captures!(r"(.+?)\s+(\S+)\s+(-?\d+)\s+?(\S*)\s+(.*)", &value)
         {
+            let display_name = if dispname == "-" {
+                name.to_string()
+            } else {
+                dispname.to_string()
+            };
+            let location = location.replace("$", name);
             Ok(ExternalSphinxRef {
                 name: name.to_owned(),
                 sphinx_type: SphinxType::try_from(sphinx_type)?,
                 priority: SphinxPriority::try_from(priority)?,
-                location: PathBuf::from(location),
-                dispname: dispname.to_string(),
+                location,
+                dispname: display_name,
             })
         } else {
             Err(eyre!("failed to parse line"))
