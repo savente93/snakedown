@@ -15,8 +15,8 @@ use crate::render::{
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct ExternalIndex {
-    name: Option<String>,
-    url: String,
+    pub name: Option<String>,
+    pub url: String,
 }
 
 pub struct Config {
@@ -26,7 +26,7 @@ pub struct Config {
     pub skip_private: bool,
     pub renderer: Box<dyn Renderer>,
     pub exclude: Vec<PathBuf>,
-    pub externals: HashMap<String, Url>,
+    pub externals: HashMap<String, ExternalIndex>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
@@ -163,9 +163,13 @@ impl ConfigBuilder {
         let mut external_linkings = HashMap::new();
 
         if let Some(external_links) = self.externals {
-            for (name, external_index) in external_links {
-                let url = Url::parse(&external_index.url)?;
-                external_linkings.insert(name, url);
+            for (key, external_index) in external_links {
+                let _ = Url::parse(&external_index.url)?; // check if url is valid
+                let external_index = ExternalIndex {
+                    name: external_index.name,
+                    url: external_index.url,
+                };
+                external_linkings.insert(key, external_index);
             }
         }
 

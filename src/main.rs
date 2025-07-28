@@ -1,5 +1,5 @@
 use color_eyre::eyre::Result;
-use snakedown::render_docs;
+use snakedown::{indexing::fetch::cache_remote_objects_inv, render_docs};
 use tracing::subscriber::set_global_default;
 
 mod cli;
@@ -19,7 +19,20 @@ async fn main() -> Result<()> {
 
     set_global_default(subscriber)?;
 
+    tracing::debug_span!("resolving runtime config");
     let config = resolve_runtime_config(args)?;
+
+    tracing::debug!("fetching external indices");
+    for (key, external_index) in config.externals {
+        tracing::debug!("fetching: {}", key);
+        cache_remote_objects_inv(
+            &external_index.url,
+            external_index.name.unwrap_or(key),
+            None,
+            false,
+        )
+        .await?;
+    }
     render_docs(
         &config.pkg_path,
         &config.output_dir,

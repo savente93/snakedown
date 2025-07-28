@@ -32,7 +32,7 @@ impl LogLevel for CustomLogLevel {
 }
 
 pub fn resolve_runtime_config(args: Args) -> Result<Config> {
-    let mut config_builder = ConfigBuilder::default();
+    let mut config_builder = ConfigBuilder::default().init_with_defaults();
 
     if let Some(config_file_path) = discover_config_file(args.config_file) {
         let file_config_builder = ConfigBuilder::from_path(&config_file_path)?;
