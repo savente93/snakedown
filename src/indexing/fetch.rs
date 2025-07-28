@@ -51,7 +51,6 @@ mod test {
 
     use assert_fs::TempDir;
     use color_eyre::Result;
-    use walkdir::WalkDir;
 
     use crate::indexing::fetch::cache_remote_objects_inv;
 
@@ -111,10 +110,6 @@ mod test {
         )
         .await?;
 
-        for entry in WalkDir::new(tmp_dir.path()).follow_links(true) {
-            let entry = entry?;
-            println!("{}", entry.path().display());
-        }
         {
             let file_size = std::fs::metadata(&obj_path)?.len();
             assert!(file_size > 0);

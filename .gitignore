@@ -12,3 +12,4 @@ _build/
 .vscode
 
 tests/zola_test_site/content/*
+.snakedown
