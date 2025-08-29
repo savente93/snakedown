@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0](https://github.com/savente93/snakedown/compare/v0.1.0...v0.2.0) - 2025-08-29
+
+### Added
+
+- add python builting as external default example
+- implment passing links to external inventory
+- implement passing optoins to renderers from config
+- implement internal link rendering
+- implement external link rendering
+- allow config file passed through cli
+- implement merging for config builders
+- impl config builder pattern
+- implement basic object.inv fetching and caching
+- hand implement sphinx ref parsing
+- implement sphinx inventory header parsing
+
+### Fixed
+
+- expand sphinx shorthands
+- fetch correct objects.inv
+- run fetching external obj as async
+
+### Other
+
+- add .bacon-locations to .gitignore
+- *(deps)* bump actions/checkout from 4 to 5
+- add badges to readme
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## [unreleased]
 
 
