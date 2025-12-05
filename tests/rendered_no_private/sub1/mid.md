@@ -33,6 +33,9 @@ square_number(self, x: int) -> int
 
 Square the given number.
 
+this is a member of the [Squarer](#test_pkg.sub1.mid.Squarer.square_number) class, and is not the same
+as the [square](#test_pkg.sub1.mid.square) function
+
 Args:
     x (int): Number to square.
 

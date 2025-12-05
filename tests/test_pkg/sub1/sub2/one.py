@@ -18,6 +18,9 @@ def is_even(num: int) -> bool:
     Example:
         >>> is_even(4)
         True
+    See also:
+        [[test_pkg.sub1.mid.Squarer.square]]
+        [[numpy.routines.fft]]
     """
     return num % 2 == 0
 

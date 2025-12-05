@@ -34,6 +34,9 @@ class Squarer:
         """
         Square the given number.
 
+        this is a member of the [[Squarer]] class, and is not the same
+        as the [[square]] function
+
         Args:
             x (int): Number to square.
 

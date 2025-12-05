@@ -21,6 +21,9 @@ def add(a: float, b: float) -> float:
     Example:
         >>> add(2.5, 4.5)
         7.0
+
+    See also:
+        [[test_pkg.bar.greet|the greeting function]]
     """
     return a + b
 
@@ -35,6 +38,11 @@ def multiply(a: float, b: float) -> float:
 
     Returns:
         float: Product of a and b.
+
+    See Also:
+        [[add]]
+        [[_subtract]]
+
     """
     return a * b
 

@@ -20,6 +20,10 @@ Example:
     >>> is_even(4)
     True
 
+See also:
+    [test_pkg.sub1.mid.Squarer.square](@/sub1/mid.md#test_pkg.sub1.mid.Squarer.square)
+    [numpy.routines.fft](https://numpy.org/doc/stable/reference/routines.fft.html)
+
 ## test_pkg.sub1.sub2.one.is_odd
 
 is_odd(num: int) -> bool

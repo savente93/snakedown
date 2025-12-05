@@ -21,6 +21,9 @@ Example:
     >>> add(2.5, 4.5)
     7.0
 
+See also:
+    [the greeting function](@/bar.md/#test_pkg.bar.greet)
+
 ## test_pkg.foo.multiply
 
 multiply(a: float, b: float) -> float
@@ -33,6 +36,10 @@ Args:
 
 Returns:
     float: Product of a and b.
+
+See also:
+    [add](#test_pkg.foo.add)
+    [_subtract](#test_pkg.foo._subtract)
 
 ## test_pkg.foo._subtract
 
