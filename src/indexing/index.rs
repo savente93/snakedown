@@ -59,9 +59,11 @@ impl Index {
 
         Ok(())
     }
+
     pub fn get(&self, import_path: String) -> Option<&ObjectRef> {
         self.index.get(&import_path)
     }
+
     pub fn add_external_index(
         &mut self,
         base_url: Url,

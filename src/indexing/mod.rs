@@ -1,4 +1,4 @@
 pub mod cache;
 pub mod fetch;
 pub mod index;
-mod object_ref;
+pub mod object_ref;
