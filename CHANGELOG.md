@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## [0.2.0](https://github.com/savente93/snakedown/compare/v0.1.0...v0.2.0) - 2025-12-11
+
+### Added
+
+- move to flat output structure
+- add python builting as external default example
+- implment passing links to external inventory
+- implement passing optoins to renderers from config
+- implement internal link rendering
+- implement external link rendering
+- allow config file passed through cli
+- implement merging for config builders
+- impl config builder pattern
+- implement basic object.inv fetching and caching
+- hand implement sphinx ref parsing
+- implement sphinx inventory header parsing
+
+### Fixed
+
+- remove prefix from docs extraction
+- remove sub_package_index from pakcage index struct
+- move indexing/{cache,fetch}.rs to their own mod
+- ignore snakedown cache in repo
+- fix just zola command
+- expand sphinx shorthands
+- fetch correct objects.inv
+- run fetching external obj as async
+
+### Other
+
+- *(deps)* bump actions/checkout from 5 to 6
+- *(deps)* bump toml_edit from 0.22.26 to 0.23.2
+- add .bacon-locations to .gitignore
+- *(deps)* bump actions/checkout from 4 to 5
+- add badges to readme
+
 
 ### ✨ Features
 
