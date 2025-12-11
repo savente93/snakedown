@@ -46,12 +46,9 @@ pub fn render_docs<R: Renderer>(
         match parsed {
             Ok(contents) => {
                 tracing::debug!("correctly parsed file {}", &sub_module.display());
-                let documentation = extract_module_documentation(
-                    &contents,
-                    Some(import_path),
-                    skip_private,
-                    skip_undoc,
-                );
+                let mut documentation =
+                    extract_module_documentation(&contents, skip_private, skip_undoc);
+                documentation.with_prefix(Some(import_path));
                 tracing::debug!("rendering documentation...");
                 let rendered = render_module(documentation, &renderer);
                 let new_write_path = out_path.join(rel_file_path);

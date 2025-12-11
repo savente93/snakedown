@@ -262,12 +262,8 @@ Callable[[], None]
     #[test]
     fn render_module_documentation() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(
-            &parsed,
-            Some(String::from("snakedown.testing.test_module")),
-            false,
-            false,
-        );
+        let mut mod_documentation = extract_module_documentation(&parsed, false, false);
+        mod_documentation.with_prefix(Some(String::from("snakedown.testing.test_module")));
 
         let rendered = render_module(mod_documentation, &MdRenderer::new());
 
@@ -343,7 +339,7 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_no_prefix() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(&parsed, None, false, false);
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
         let rendered = render_module(mod_documentation, &MdRenderer::new());
 
@@ -354,8 +350,8 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_only_prefix() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some(String::from("snakedown")), false, false);
+        let mut mod_documentation = extract_module_documentation(&parsed, false, false);
+        mod_documentation.with_prefix(Some(String::from("snakedown")));
 
         let rendered = render_module(mod_documentation, &MdRenderer::new());
 
@@ -434,8 +430,9 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_only_name() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some("snakedown".to_string()), false, false);
+        let mut mod_documentation = extract_module_documentation(&parsed, false, false);
+
+        mod_documentation.with_prefix(Some("snakedown".to_string()));
 
         let rendered = render_module(mod_documentation, &MdRenderer::new());
 
@@ -446,8 +443,8 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_zola() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some(String::from("snakedown")), false, false);
+        let mut mod_documentation = extract_module_documentation(&parsed, false, false);
+        mod_documentation.with_prefix(Some(String::from("snakedown")));
 
         let rendered = render_module(mod_documentation, &ZolaRenderer::new(false));
 
