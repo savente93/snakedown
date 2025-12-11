@@ -59,7 +59,7 @@ class Greeter:
     #[test]
     fn parse_test_python_class() -> Result<()> {
         let program = parse_python_str(test_python_class())?;
-        let documentation = extract_module_documentation(&program, None, None, false, false);
+        let documentation = extract_module_documentation(&program, None, false, false);
         assert_eq!(documentation.functions.len(), 0);
         assert_eq!(documentation.classes.len(), 1);
 
@@ -75,7 +75,7 @@ class Greeter:
     fn parse_test_python_class_docstring() -> Result<()> {
         let program = parse_python_str(test_python_class())?;
 
-        let documentation = extract_module_documentation(&program, None, None, false, false);
+        let documentation = extract_module_documentation(&program, None, false, false);
 
         // we checked before there is at least one class, so this is safe
         #[allow(clippy::unwrap_used)]
@@ -104,7 +104,7 @@ class Greeter:
         file.write_all(file_contents.as_bytes())?;
 
         let program = parse_python_file(root_pkg_path)?;
-        let docs = extract_module_documentation(&program, None, None, false, false);
+        let docs = extract_module_documentation(&program, None, false, false);
 
         assert_eq!(docs.docstring, None);
         assert_eq!(docs.functions.len(), 0);

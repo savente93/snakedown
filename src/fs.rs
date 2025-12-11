@@ -1,8 +1,9 @@
+use lazy_regex::regex_replace_all;
 use std::{
     collections::HashMap,
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     fs::{File, create_dir_all, exists},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf, absolute},
 };
 use walkdir::WalkDir;
 
@@ -35,40 +36,6 @@ pub fn is_private_module(path: &Path) -> bool {
             .unwrap_or(false)
     } else {
         false
-    }
-}
-
-pub fn get_python_prefix(rel_path: &Path) -> Result<Option<String>> {
-    if let Some(file_name) = rel_path.file_name() {
-        let parent = if file_name == "__init__.py" {
-            // necessary because the parent of a relative path with only one component
-            // is Some("") and we don't want that
-            let temp = rel_path.parent().and_then(|p| p.parent());
-            if temp == Some(&PathBuf::new()) {
-                None
-            } else {
-                temp
-            }
-        } else {
-            rel_path.parent()
-        };
-
-        if let Some(par) = parent {
-            let components = par
-                .components()
-                .filter_map(|comp| comp.as_os_str().to_str())
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>();
-            if components.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(components.join(".")))
-            }
-        } else {
-            Ok(None)
-        }
-    } else {
-        Err(eyre!("Could not determine file name."))
     }
 }
 
@@ -111,6 +78,39 @@ pub fn get_module_name(path: &Path) -> Result<String> {
             path.display()
         )))
     }
+}
+
+pub fn import_components_from_fs_path(pkg_root: &Path, module_path: &Path) -> Result<Vec<String>> {
+    let pkg_root_name = get_module_name(pkg_root)?;
+
+    // necessary to make sure they have a common prefix
+    let abs_fs_module_path = absolute(module_path)?;
+    let abs_fs_pkg_path = absolute(pkg_root)?;
+    let mut rel_fs_path = abs_fs_module_path
+        .strip_prefix(abs_fs_pkg_path)?
+        .with_extension("");
+
+    if rel_fs_path.file_stem() == Some(&OsString::from("__init__")) {
+        rel_fs_path.pop();
+    }
+
+    let mut import_components = vec![pkg_root_name];
+
+    let rel_import_path: Vec<String> = rel_fs_path
+        .components()
+        .map(|c| {
+            c.as_os_str()
+                .to_str()
+                // python name normalisation
+                // see https://packaging.python.org/en/latest/specifications/name-normalization/
+                .map(|s| String::from(regex_replace_all!(r"[-.]+", &s.to_lowercase(), "-")))
+                .ok_or_eyre("error converting path component to UTF-8")
+        })
+        .collect::<Result<Vec<String>>>()?;
+
+    import_components.extend(rel_import_path);
+
+    Ok(import_components)
 }
 
 /// Convenience function to create empty python package on disc
@@ -484,22 +484,57 @@ mod test {
 
     #[test]
     fn test_get_python_prefix_package() -> Result<()> {
-        let input = PathBuf::from("foo/bar/baz/__init__.py");
-        let expected = String::from("foo.bar");
-        assert_eq!(get_python_prefix(&input)?, Some(expected));
+        let module_path = PathBuf::from("test/foo/bar/baz/__init__.py");
+        let pkg_path = PathBuf::from("./test");
+        let expected = String::from("test.foo.bar.baz");
+        assert_eq!(
+            import_components_from_fs_path(&pkg_path, &module_path)?.join("."),
+            expected
+        );
         Ok(())
     }
     #[test]
     fn test_get_python_prefix_module() -> Result<()> {
-        let input = PathBuf::from("foo/bar/baz/mew.py");
-        let expected = String::from("foo.bar.baz");
-        assert_eq!(get_python_prefix(&input)?, Some(expected));
+        let module_path = PathBuf::from("test/foo/bar/baz/mew.py");
+        let pkg_path = PathBuf::from("./test");
+        let expected = String::from("test.foo.bar.baz.mew");
+        assert_eq!(
+            import_components_from_fs_path(&pkg_path, &module_path)?.join("."),
+            expected
+        );
+        Ok(())
+    }
+    #[test]
+    fn test_private_module() -> Result<()> {
+        let module_path = PathBuf::from("test/foo/_private.py");
+        let pkg_path = PathBuf::from("./test");
+        let expected = String::from("test.foo._private");
+        assert_eq!(
+            import_components_from_fs_path(&pkg_path, &module_path)?.join("."),
+            expected
+        );
+        Ok(())
+    }
+    #[test]
+    fn test_foo() -> Result<()> {
+        let module_path = PathBuf::from("test/test_pkg/foo.py");
+        let pkg_path = PathBuf::from("./test/test_pkg");
+        let expected = String::from("test_pkg.foo");
+        assert_eq!(
+            import_components_from_fs_path(&pkg_path, &module_path)?.join("."),
+            expected
+        );
         Ok(())
     }
     #[test]
     fn test_shallow_prefix() -> Result<()> {
-        let input = PathBuf::from("foo/__init__.py");
-        assert_eq!(get_python_prefix(&input)?, None);
+        let module_path = PathBuf::from("test/foo/__init__.py");
+        let pkg_path = PathBuf::from("./test");
+        let expected = String::from("test.foo");
+        assert_eq!(
+            import_components_from_fs_path(&pkg_path, &module_path)?.join("."),
+            expected
+        );
         Ok(())
     }
 }
