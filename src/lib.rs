@@ -46,23 +46,12 @@ pub fn render_docs<R: Renderer>(
         match parsed {
             Ok(contents) => {
                 tracing::debug!("correctly parsed file {}", &sub_module.display());
-                let documentation = {
-                    // extra scope is so docs doesn't have to be mutable for the
-                    // whole rest of the function
-                    let mut tmp_docs = extract_module_documentation(
-                        &contents,
-                        Some(import_path),
-                        skip_private,
-                        skip_undoc,
-                    );
-                    if sub_module.ends_with("__init__.py")
-                        && let Some(dir) = sub_module.parent()
-                    {
-                        tmp_docs
-                            .with_sub_modules(pkg_index.sub_module_index.get(&dir.to_path_buf()));
-                    }
-                    tmp_docs
-                };
+                let documentation = extract_module_documentation(
+                    &contents,
+                    Some(import_path),
+                    skip_private,
+                    skip_undoc,
+                );
                 tracing::debug!("rendering documentation...");
                 let rendered = render_module(documentation, &renderer);
                 let new_write_path = out_path.join(rel_file_path);

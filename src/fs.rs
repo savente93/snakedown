@@ -1,6 +1,5 @@
 use lazy_regex::regex_replace_all;
 use std::{
-    collections::HashMap,
     ffi::{OsStr, OsString},
     fs::{File, create_dir_all, exists},
     path::{Path, PathBuf, absolute},
@@ -8,8 +7,6 @@ use std::{
 use walkdir::WalkDir;
 
 use color_eyre::eyre::{OptionExt, Result, eyre};
-
-use crate::render::translate_filename;
 
 /// determines whether given path is a Python module
 /// i.e. a file with a .py extension
@@ -210,7 +207,6 @@ pub fn get_subpackages(pkg_path: &Path) -> Result<Vec<PathBuf>> {
 pub struct PackageIndex {
     pub module_paths: Vec<PathBuf>,
     pub package_paths: Vec<PathBuf>,
-    pub sub_module_index: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 /// will walk the provided path and index all the subpackages and modules
@@ -239,43 +235,9 @@ pub fn walk_package(
         }
     }
 
-    let mut sub_modules: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
-
-    for sub_pkg in &sub_packages {
-        let pkg_component_count = &sub_pkg.components().count();
-
-        // build an index that includes both the sub modules and sub packages
-        let mut subs = modules
-            .iter()
-            .filter(|p| {
-                p.starts_with(sub_pkg)
-                    && p.components().count() == pkg_component_count + 1
-                    && !p.ends_with("__init__.py")
-            })
-            .cloned()
-            .collect::<Vec<_>>();
-
-        let child_pkgs = sub_packages
-            .iter()
-            .filter(|p| p.starts_with(sub_pkg) && p.components().count() == pkg_component_count + 1)
-            .map(|p| p.join("__init__.py"))
-            .collect::<Vec<_>>();
-
-        subs.extend(child_pkgs);
-        subs.sort();
-        subs.retain(|p| should_include(p, skip_private, &exclude));
-        subs = subs
-            .into_iter()
-            .filter_map(|p| p.strip_prefix(sub_pkg).ok().map(|s| s.to_path_buf()))
-            .map(|p| translate_filename(&p).to_path_buf())
-            .collect();
-        let _entry = sub_modules.insert(sub_pkg.clone(), subs);
-    }
-
     Ok(PackageIndex {
         module_paths: modules,
         package_paths: sub_packages,
-        sub_module_index: sub_modules,
     })
 }
 
