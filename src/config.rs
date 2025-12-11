@@ -263,7 +263,7 @@ mod test {
     }
 
     #[test]
-    fn config_merge_other_takes_precident() -> Result<()> {
+    fn config_merge_other_takes_precedent() -> Result<()> {
         let mut first = ConfigBuilder::default()
             .with_pkg_path(Some(PathBuf::from(".")))
             .with_ssg(Some(SSG::Markdown));
