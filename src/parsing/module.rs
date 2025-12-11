@@ -11,7 +11,6 @@ use super::{
 
 #[derive(Default, Debug)]
 pub struct ModuleDocumentation {
-    pub name: Option<String>,
     pub prefix: Option<String>,
     pub docstring: Option<String>,
     pub functions: Vec<FunctionDocumentation>,
@@ -39,19 +38,12 @@ impl ModuleDocumentation {
 // just a conveneience function
 pub fn extract_module_documentation(
     input_module: &Mod,
-    name: Option<String>,
     prefix: Option<String>,
     skip_private: bool,
     skip_undoc: bool,
 ) -> ModuleDocumentation {
     if let Mod::Module(mod_module) = input_module {
-        extract_documentation_from_statements(
-            &mod_module.body,
-            name,
-            prefix,
-            skip_private,
-            skip_undoc,
-        )
+        extract_documentation_from_statements(&mod_module.body, prefix, skip_private, skip_undoc)
     } else {
         ModuleDocumentation::default()
     }
@@ -81,12 +73,10 @@ fn extract_exports_from_statement(statement: &StmtAssign) -> Result<Vec<String>>
 
 fn extract_documentation_from_statements(
     statements: &[Stmt],
-    name: Option<String>,
     prefix: Option<String>,
     skip_private: bool,
     skip_undoc: bool,
 ) -> ModuleDocumentation {
-    assert_ne!(name, Some(String::from("")));
     assert_ne!(prefix, Some(String::from("")));
     let mut free_functions = vec![];
     let mut class_definitions = vec![];
@@ -159,7 +149,6 @@ fn extract_documentation_from_statements(
     }
 
     ModuleDocumentation {
-        name,
         prefix,
         docstring,
         functions: free_functions,
@@ -179,7 +168,7 @@ mod test {
     #[test]
     fn test_doc_extraction_interactive_module() -> Result<()> {
         let expr = parse("1 + 2", Mode::Expression, "<embedded>")?;
-        let docs = extract_module_documentation(&expr, None, None, false, false);
+        let docs = extract_module_documentation(&expr, None, false, false);
 
         assert_eq!(docs.docstring, None);
         assert_eq!(docs.functions.len(), 0);
@@ -215,7 +204,7 @@ class UndocClass:
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, None, true, true);
+        let docs = extract_module_documentation(&expr, None, true, true);
 
         assert_eq!(docs.docstring, None);
         assert_eq!(docs.functions.len(), 1);
@@ -238,7 +227,7 @@ c,d, foo = *bar
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, None, true, true);
+        let docs = extract_module_documentation(&expr, None, true, true);
 
         assert_eq!(docs.exports.map(|e| e.len()), Some(5));
 
@@ -259,7 +248,7 @@ b = 3
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, None, true, true);
+        let docs = extract_module_documentation(&expr, None, true, true);
 
         assert_eq!(docs.exports, Some(vec![String::from("b")]));
         assert!(logs_contain("__all__ was defined multiple times."));
@@ -279,7 +268,7 @@ b = 3
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, None, true, true);
+        let docs = extract_module_documentation(&expr, None, true, true);
 
         assert_eq!(docs.exports, None);
 

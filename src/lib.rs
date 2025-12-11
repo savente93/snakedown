@@ -8,15 +8,14 @@ use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::fs::import_components_from_fs_path;
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
 use crate::render::formats::Renderer;
 pub use crate::render::render_module;
 
 use color_eyre::Result;
-use fs::get_python_prefix;
 use parsing::module::extract_module_documentation;
 use parsing::utils::parse_python_file;
-use render::translate_filename;
 
 pub fn render_docs<R: Renderer>(
     pkg_path: &Path,
@@ -26,57 +25,47 @@ pub fn render_docs<R: Renderer>(
     exclude: Vec<PathBuf>,
     renderer: &R,
 ) -> Result<Vec<PathBuf>> {
-    let root = pkg_path;
-    let root_pkg_path = get_module_name(pkg_path)?;
+    // let root_pkg_name = get_module_name(pkg_path)?;
+    let absolute_pkg_path = pkg_path.canonicalize()?;
     let mut errored = vec![];
 
-    tracing::info!("indexing package at {}", &pkg_path.display());
-    let pkg_index = walk_package(pkg_path, skip_private, exclude)?;
+    tracing::info!("indexing package at {}", &absolute_pkg_path.display());
+    let pkg_index = walk_package(&absolute_pkg_path, skip_private, exclude)?;
 
-    tracing::info!("Creating directories");
-
-    for sub_pkg in pkg_index.package_paths {
-        tracing::debug!("Creating directory: {}", &sub_pkg.display());
-        let rel_write_path = sub_pkg.strip_prefix(root)?;
-        let full_write_path = out_path.join(rel_write_path);
-        create_dir_all(&full_write_path)?;
-    }
-    tracing::info!("done creating directories");
+    create_dir_all(out_path)?;
 
     for sub_module in pkg_index.module_paths {
         tracing::info!("creating documentation for {}", &sub_module.display());
-        let rel_write_path = sub_module.strip_prefix(root)?;
-        let rel_python_path = Path::new(&root_pkg_path).join(rel_write_path);
-        let full_write_path = out_path.join(rel_write_path);
-        let prefix = get_python_prefix(&rel_python_path)?;
+        let abs_module_path = sub_module.clone().canonicalize()?;
+        let import_components =
+            import_components_from_fs_path(&absolute_pkg_path, &abs_module_path)?;
+        let import_path = import_components.clone().join(".");
+        let mut rel_file_path = PathBuf::from(import_path.clone());
+        rel_file_path = rel_file_path.with_added_extension("md");
         let parsed = parse_python_file(&sub_module);
         match parsed {
             Ok(contents) => {
                 tracing::debug!("correctly parsed file {}", &sub_module.display());
-                tracing::debug!("extracting documentation...");
-                let module_name = get_module_name(&sub_module).ok();
                 let documentation = {
                     // extra scope is so docs doesn't have to be mutable for the
                     // whole rest of the function
                     let mut tmp_docs = extract_module_documentation(
                         &contents,
-                        module_name,
-                        prefix,
+                        Some(import_path),
                         skip_private,
                         skip_undoc,
                     );
-                    if sub_module.ends_with("__init__.py") {
-                        if let Some(dir) = sub_module.parent() {
-                            tmp_docs.with_sub_modules(
-                                pkg_index.sub_module_index.get(&dir.to_path_buf()),
-                            );
-                        }
+                    if sub_module.ends_with("__init__.py")
+                        && let Some(dir) = sub_module.parent()
+                    {
+                        tmp_docs
+                            .with_sub_modules(pkg_index.sub_module_index.get(&dir.to_path_buf()));
                     }
                     tmp_docs
                 };
                 tracing::debug!("rendering documentation...");
                 let rendered = render_module(documentation, &renderer);
-                let new_write_path = translate_filename(&full_write_path);
+                let new_write_path = out_path.join(rel_file_path);
                 tracing::debug!(
                     "writing rendered documentation too {}",
                     &new_write_path.display()
@@ -200,7 +189,7 @@ mod test {
         file1.read_to_string(&mut buf1)?;
         file2.read_to_string(&mut buf2)?;
 
-        assert_eq!(buf1, buf2,);
+        assert_eq!(buf1, buf2, "{} is different", path1.display());
 
         Ok(())
     }
