@@ -14,3 +14,5 @@ _build/
 tests/zola_test_site/content/*
 
 .bacon-locations
+
+tests/zola_test_site/public
