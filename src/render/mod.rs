@@ -36,10 +36,14 @@ pub fn translate_filename(path: &Path) -> PathBuf {
     translated
 }
 
-pub fn render_module<R: Renderer>(mod_doc: ModuleDocumentation, renderer: &R) -> String {
+pub fn render_module<R: Renderer>(
+    mod_doc: ModuleDocumentation,
+    prefix: Option<String>,
+    renderer: &R,
+) -> String {
     let mut out = String::new();
 
-    let front_matter_str = renderer.render_front_matter(mod_doc.prefix.as_deref());
+    let front_matter_str = renderer.render_front_matter(prefix.as_deref());
     if !front_matter_str.is_empty() {
         out.push_str(&front_matter_str);
     }
@@ -52,12 +56,12 @@ pub fn render_module<R: Renderer>(mod_doc: ModuleDocumentation, renderer: &R) ->
 
     for fn_docs in mod_doc.functions {
         out.push('\n');
-        out.push_str(render_function_docs(fn_docs, &mod_doc.prefix, 2, renderer).trim_end());
+        out.push_str(render_function_docs(fn_docs, &prefix, 2, renderer).trim_end());
         out.push('\n');
     }
 
     for class_docs in mod_doc.classes {
-        out.push_str(render_class_docs(class_docs, &mod_doc.prefix, 2, &renderer).trim_end());
+        out.push_str(render_class_docs(class_docs, &prefix, 2, &renderer).trim_end());
         out.push('\n');
     }
     out
@@ -262,14 +266,13 @@ Callable[[], None]
     #[test]
     fn render_module_documentation() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(
-            &parsed,
-            Some(String::from("snakedown.testing.test_module")),
-            false,
-            false,
-        );
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
-        let rendered = render_module(mod_documentation, &MdRenderer::new());
+        let rendered = render_module(
+            mod_documentation,
+            Some(String::from("snakedown.testing.test_module")),
+            &MdRenderer::new(),
+        );
 
         assert_eq!(rendered, expected_module_docs_rendered());
 
@@ -343,9 +346,9 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_no_prefix() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(&parsed, None, false, false);
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
-        let rendered = render_module(mod_documentation, &MdRenderer::new());
+        let rendered = render_module(mod_documentation, None, &MdRenderer::new());
 
         assert_eq!(rendered, expected_module_docs_no_prefix_no_name_rendered());
 
@@ -354,10 +357,13 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_only_prefix() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some(String::from("snakedown")), false, false);
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
-        let rendered = render_module(mod_documentation, &MdRenderer::new());
+        let rendered = render_module(
+            mod_documentation,
+            Some(String::from("snakedown")),
+            &MdRenderer::new(),
+        );
 
         assert_eq!(rendered, expected_module_docs_only_prefix_rendered());
 
@@ -434,10 +440,13 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_only_name() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some("snakedown".to_string()), false, false);
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
-        let rendered = render_module(mod_documentation, &MdRenderer::new());
+        let rendered = render_module(
+            mod_documentation,
+            Some("snakedown".to_string()),
+            &MdRenderer::new(),
+        );
 
         assert_eq!(rendered, expected_module_docs_only_name_rendered());
 
@@ -446,10 +455,13 @@ Callable[[], None]
     #[test]
     fn render_module_documentation_zola() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation =
-            extract_module_documentation(&parsed, Some(String::from("snakedown")), false, false);
+        let mod_documentation = extract_module_documentation(&parsed, false, false);
 
-        let rendered = render_module(mod_documentation, &ZolaRenderer::new(false));
+        let rendered = render_module(
+            mod_documentation,
+            Some(String::from("snakedown")),
+            &ZolaRenderer::new(false),
+        );
 
         assert_eq!(rendered, expected_module_docs_zola_rendered());
 

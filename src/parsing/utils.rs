@@ -47,7 +47,7 @@ mod test {
     #[test]
     fn parse_empty_string() -> Result<()> {
         let program = parse_python_str("")?;
-        let documentation = extract_module_documentation(&program, None, false, false);
+        let documentation = extract_module_documentation(&program, false, false);
 
         assert_eq!(documentation.docstring, None);
         assert_eq!(documentation.functions.len(), 0);

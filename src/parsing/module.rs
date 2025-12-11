@@ -11,7 +11,6 @@ use super::{
 
 #[derive(Default, Debug)]
 pub struct ModuleDocumentation {
-    pub prefix: Option<String>,
     pub docstring: Option<String>,
     pub functions: Vec<FunctionDocumentation>,
     pub classes: Vec<ClassDocumentation>,
@@ -25,9 +24,6 @@ pub struct ModuleReference {
     pub path: PathBuf,
 }
 
-// This one is the only gets done separately because it we can't deduce it from the file
-// contents themselves, we have to walk the fs for it, so we add a convenience
-// function so we can add that after the fact
 impl ModuleDocumentation {
     pub fn with_sub_modules(&mut self, subs: Option<&Vec<PathBuf>>) -> &mut Self {
         self.sub_modules = subs.cloned();
@@ -38,12 +34,11 @@ impl ModuleDocumentation {
 // just a conveneience function
 pub fn extract_module_documentation(
     input_module: &Mod,
-    prefix: Option<String>,
     skip_private: bool,
     skip_undoc: bool,
 ) -> ModuleDocumentation {
     if let Mod::Module(mod_module) = input_module {
-        extract_documentation_from_statements(&mod_module.body, prefix, skip_private, skip_undoc)
+        extract_documentation_from_statements(&mod_module.body, skip_private, skip_undoc)
     } else {
         ModuleDocumentation::default()
     }
@@ -73,11 +68,9 @@ fn extract_exports_from_statement(statement: &StmtAssign) -> Result<Vec<String>>
 
 fn extract_documentation_from_statements(
     statements: &[Stmt],
-    prefix: Option<String>,
     skip_private: bool,
     skip_undoc: bool,
 ) -> ModuleDocumentation {
-    assert_ne!(prefix, Some(String::from("")));
     let mut free_functions = vec![];
     let mut class_definitions = vec![];
     let mut exports = None;
@@ -149,7 +142,6 @@ fn extract_documentation_from_statements(
     }
 
     ModuleDocumentation {
-        prefix,
         docstring,
         functions: free_functions,
         classes: class_definitions,
@@ -168,7 +160,7 @@ mod test {
     #[test]
     fn test_doc_extraction_interactive_module() -> Result<()> {
         let expr = parse("1 + 2", Mode::Expression, "<embedded>")?;
-        let docs = extract_module_documentation(&expr, None, false, false);
+        let docs = extract_module_documentation(&expr, false, false);
 
         assert_eq!(docs.docstring, None);
         assert_eq!(docs.functions.len(), 0);
@@ -204,7 +196,7 @@ class UndocClass:
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, true, true);
+        let docs = extract_module_documentation(&expr, true, true);
 
         assert_eq!(docs.docstring, None);
         assert_eq!(docs.functions.len(), 1);
@@ -227,7 +219,7 @@ c,d, foo = *bar
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, true, true);
+        let docs = extract_module_documentation(&expr, true, true);
 
         assert_eq!(docs.exports.map(|e| e.len()), Some(5));
 
@@ -248,7 +240,7 @@ b = 3
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, true, true);
+        let docs = extract_module_documentation(&expr, true, true);
 
         assert_eq!(docs.exports, Some(vec![String::from("b")]));
         assert!(logs_contain("__all__ was defined multiple times."));
@@ -268,7 +260,7 @@ b = 3
             Mode::Module,
             "<embedded>",
         )?;
-        let docs = extract_module_documentation(&expr, None, true, true);
+        let docs = extract_module_documentation(&expr, true, true);
 
         assert_eq!(docs.exports, None);
 
