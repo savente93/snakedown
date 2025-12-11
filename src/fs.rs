@@ -258,7 +258,6 @@ pub fn walk_package(
         let child_pkgs = sub_packages
             .iter()
             .filter(|p| p.starts_with(sub_pkg) && p.components().count() == pkg_component_count + 1)
-            .cloned()
             .map(|p| p.join("__init__.py"))
             .collect::<Vec<_>>();
 
