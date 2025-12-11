@@ -37,7 +37,7 @@ mod test {
     use color_eyre::Result;
     use tempfile::TempDir;
 
-    use crate::indexing::cache::init_cache;
+    use crate::indexing::external::cache::init_cache;
 
     #[test]
     fn init_cache_tmp_dir() -> Result<()> {

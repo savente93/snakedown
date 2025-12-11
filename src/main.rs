@@ -1,5 +1,5 @@
 use color_eyre::eyre::Result;
-use snakedown::{indexing::fetch::cache_remote_objects_inv, render_docs};
+use snakedown::{indexing::external::fetch::cache_remote_objects_inv, render_docs};
 use tracing::subscriber::set_global_default;
 
 mod cli;
