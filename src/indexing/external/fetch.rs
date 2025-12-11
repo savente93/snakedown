@@ -7,7 +7,7 @@ use std::{
 use reqwest::Response;
 use url::Url;
 
-use crate::indexing::cache::init_cache;
+use crate::indexing::external::cache::init_cache;
 use color_eyre::Result;
 
 pub async fn cache_remote_objects_inv(
@@ -53,7 +53,7 @@ mod test {
     use color_eyre::Result;
     use walkdir::WalkDir;
 
-    use crate::indexing::fetch::cache_remote_objects_inv;
+    use crate::indexing::external::fetch::cache_remote_objects_inv;
 
     #[tokio::test]
     async fn cache_clean_numpy_obj_inv() -> Result<()> {
