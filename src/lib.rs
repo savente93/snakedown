@@ -14,8 +14,8 @@ use crate::render::formats::Renderer;
 pub use crate::render::render_module;
 
 use color_eyre::Result;
-use parsing::module::extract_module_documentation;
-use parsing::utils::parse_python_file;
+use parsing::python::module::extract_module_documentation;
+use parsing::python::utils::parse_python_file;
 
 pub fn render_docs<R: Renderer>(
     pkg_path: &Path,

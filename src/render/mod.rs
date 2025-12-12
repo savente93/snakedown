@@ -14,7 +14,7 @@ use args::render_args;
 use expr::render_expr;
 
 use crate::{
-    parsing::{
+    parsing::python::{
         class::ClassDocumentation, function::FunctionDocumentation, module::ModuleDocumentation,
     },
     render::formats::Renderer,
@@ -172,7 +172,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        parsing::{module::extract_module_documentation, utils::parse_python_str},
+        parsing::{python::module::extract_module_documentation, python::utils::parse_python_str},
         render::{
             formats::{md::MdRenderer, zola::ZolaRenderer},
             render_module, translate_filename,

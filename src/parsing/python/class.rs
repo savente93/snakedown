@@ -35,8 +35,8 @@ mod test {
     use std::{fs::File, io::Write};
 
     use crate::parsing::{
-        module::extract_module_documentation,
-        utils::{parse_python_file, parse_python_str},
+        python::module::extract_module_documentation,
+        python::utils::{parse_python_file, parse_python_str},
     };
 
     fn test_python_class() -> &'static str {
