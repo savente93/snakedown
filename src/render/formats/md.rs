@@ -14,12 +14,7 @@ impl MdRenderer {
 }
 impl Renderer for MdRenderer {
     fn render_header(&self, content: &str, level: usize) -> String {
-        let mut out = String::new();
-        out.push_str(&"#".repeat(level));
-        out.push(' ');
-        out.push_str(content);
-        out.push('\n');
-        out
+        format!("{} {}", &"#".repeat(level), content.trim())
     }
 
     fn render_front_matter(&self, title: Option<&str>) -> String {
@@ -54,7 +49,7 @@ mod test {
     fn test_render_md_header() -> Result<()> {
         let text = String::from("foo");
         let out = MdRenderer::new().render_header(&text, 1);
-        assert_eq!(out, String::from("# foo\n"));
+        assert_eq!(out, String::from("# foo"));
         Ok(())
     }
 

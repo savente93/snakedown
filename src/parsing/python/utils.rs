@@ -28,7 +28,7 @@ pub(crate) fn extract_docstring_from_body(body: &[Stmt]) -> Option<String> {
                 kind: _,
             }) = &**value
             {
-                Some(s.clone())
+                Some(s.trim().to_string().clone())
             } else {
                 None
             }

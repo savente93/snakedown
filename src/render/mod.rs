@@ -14,8 +14,11 @@ use args::render_args;
 use expr::render_expr;
 
 use crate::{
-    parsing::python::{
-        class::ClassDocumentation, function::FunctionDocumentation, module::ModuleDocumentation,
+    parsing::{
+        ObjectDocumentation,
+        python::{
+            class::ClassDocumentation, function::FunctionDocumentation, module::ModuleDocumentation,
+        },
     },
     render::formats::Renderer,
 };
@@ -36,122 +39,129 @@ pub fn translate_filename(path: &Path) -> PathBuf {
     translated
 }
 
+pub fn fully_qualified_object_name(object: &ObjectDocumentation, prefix: Option<String>) -> String {
+    match (object, prefix) {
+        (ObjectDocumentation::Module(_), None) => String::new(),
+        (ObjectDocumentation::Module(_), Some(p)) => p,
+        (ObjectDocumentation::Class(class_documentation), None) => {
+            class_documentation.name.to_string().trim().to_string()
+        }
+        (ObjectDocumentation::Class(class_documentation), Some(p)) => {
+            format!("{}.{}", p, class_documentation.name.clone().trim())
+        }
+        (ObjectDocumentation::Function(function_documentation), None) => {
+            function_documentation.name.to_string().trim().to_string()
+        }
+        (ObjectDocumentation::Function(function_documentation), Some(p)) => {
+            format!("{}.{}", p, function_documentation.name.to_string().trim())
+        }
+    }
+}
+
+pub fn render_object<R: Renderer>(
+    object: &ObjectDocumentation,
+    fully_qualified_name: String,
+    renderer: &R,
+) -> String {
+    match object {
+        ObjectDocumentation::Class(class_documentation) => {
+            render_class_docs(class_documentation, &fully_qualified_name, renderer)
+        }
+        ObjectDocumentation::Module(module_documentation) => {
+            render_module(module_documentation, fully_qualified_name, renderer)
+        }
+        ObjectDocumentation::Function(function_documentation) => {
+            render_function_docs(function_documentation, &fully_qualified_name, renderer)
+        }
+    }
+}
+
 pub fn render_module<R: Renderer>(
-    mod_doc: ModuleDocumentation,
-    prefix: Option<String>,
+    mod_doc: &ModuleDocumentation,
+    fully_qualified_name: String,
     renderer: &R,
 ) -> String {
     let mut out = String::new();
 
-    let front_matter_str = renderer.render_front_matter(prefix.as_deref());
+    let front_matter_str = renderer.render_front_matter(Some(&fully_qualified_name));
     if !front_matter_str.is_empty() {
         out.push_str(&front_matter_str);
+        out.push('\n');
+        out.push('\n');
     }
 
     if let Some(docstring) = &mod_doc.docstring {
-        out.push('\n');
-        out.push_str(docstring.trim());
-        out.push('\n');
-    }
-
-    for fn_docs in mod_doc.functions {
-        out.push('\n');
-        out.push_str(render_function_docs(fn_docs, &prefix, 2, renderer).trim_end());
+        out.push_str(docstring);
         out.push('\n');
     }
 
-    for class_docs in mod_doc.classes {
-        out.push_str(render_class_docs(class_docs, &prefix, 2, &renderer).trim_end());
-        out.push('\n');
-    }
     out
 }
 
 fn render_class_docs<R: Renderer>(
-    class_docs: ClassDocumentation,
-    prefix: &Option<String>,
-    header_level: usize,
+    class_docs: &ClassDocumentation,
+    fully_qualified_name: &str,
     renderer: &R,
 ) -> String {
     let mut out = String::new();
+
+    out.push_str(&renderer.render_front_matter(Some(fully_qualified_name)));
     out.push('\n');
-    let fully_qualified_class_name = if let Some(p) = prefix {
-        format!("{}.{}", p, &class_docs.name)
-    } else {
-        format!("{}", &class_docs.name)
-    };
+    out.push('\n');
 
-    out.push_str(&renderer.render_header(&fully_qualified_class_name, header_level));
-
-    if let Some(docstring) = class_docs.docstring {
-        let indent = detect_docstring_indent_prefix(&docstring);
+    if let Some(docstring) = &class_docs.docstring {
+        let (indent_str, level) = detect_docstring_indent_prefix(docstring);
         let docstring_ident_stripped = docstring
             .split("\n")
-            .map(|s| s.strip_prefix(&indent).unwrap_or(s))
+            .map(|s| s.strip_prefix(&indent_str.repeat(level + 1)).unwrap_or(s))
             .collect::<Vec<_>>()
             .join("\n");
-        out.push('\n');
-        out.push_str(docstring_ident_stripped.trim());
-        out.push('\n');
-    }
-    let method_prefix = if let Some(p) = prefix {
-        Some(format!("{}.{}", p, class_docs.name))
-    } else {
-        Some(class_docs.name.to_string())
-    };
-    for fn_docs in class_docs.methods {
-        out.push('\n');
-        out.push_str(
-            render_function_docs(fn_docs, &method_prefix, header_level + 1, renderer).trim(),
-        );
+        out.push_str(&docstring_ident_stripped);
         out.push('\n');
     }
+
     out
 }
 
 fn render_function_docs<R: Renderer>(
-    fn_docs: FunctionDocumentation,
-    prefix: &Option<String>,
-    header_level: usize,
+    fn_docs: &FunctionDocumentation,
+    fully_qualified_name: &str,
     renderer: &R,
 ) -> String {
     let mut out = String::new();
 
-    let fully_qualified_function_name = if let Some(p) = prefix {
-        format!("{}.{}", p, &fn_docs.name)
-    } else {
-        fn_docs.name.to_string()
-    };
-    out.push_str(&renderer.render_header(&fully_qualified_function_name, header_level));
+    out.push_str(&renderer.render_front_matter(Some(fully_qualified_name)));
 
+    out.push('\n');
     out.push('\n');
     out.push_str(&fn_docs.name);
     out.push('(');
-    out.push_str(&render_args(fn_docs.args));
+    out.push_str(&render_args(fn_docs.args.clone()));
     out.push(')');
-    if let Some(return_annotation) = fn_docs.return_type {
+    if let Some(return_annotation) = fn_docs.return_type.clone() {
         out.push_str(&format!(" -> {}", render_expr(return_annotation)));
+        out.push('\n');
     }
-    out.push('\n');
 
-    if let Some(docstring) = fn_docs.docstring {
-        let indent = detect_docstring_indent_prefix(&docstring);
+    if let Some(docstring) = fn_docs.docstring.clone() {
+        out.push('\n');
+        let (indent_str, level) = detect_docstring_indent_prefix(&docstring);
         let docstring_ident_stripped = docstring
             .split("\n")
-            .map(|s| s.strip_prefix(&indent).unwrap_or(s))
+            .map(|s| s.strip_prefix(&indent_str.repeat(level + 2)).unwrap_or(s))
             .collect::<Vec<_>>()
             .join("\n");
-        out.push('\n');
         out.push_str(docstring_ident_stripped.trim());
     }
+    out.push('\n');
     out
 }
 
 /// Detects the common indentation prefix of a Python docstring.
 /// Returns the leading whitespace (spaces/tabs) of the least-indented non-empty line after the first.
 /// This handles both spaces and tabs without normalization.
-fn detect_docstring_indent_prefix(docstring: &str) -> String {
-    docstring
+fn detect_docstring_indent_prefix(docstring: &str) -> (&str, usize) {
+    let indent = docstring
         .lines()
         .filter(|line| !line.trim().is_empty()) // skip lines that are fully empty or just whitespace
         .map(|line| {
@@ -160,7 +170,13 @@ fn detect_docstring_indent_prefix(docstring: &str) -> String {
                 .collect::<String>()
         })
         .min_by_key(|prefix| prefix.len()) // get the shortest non-empty indent
-        .unwrap_or_default()
+        .unwrap_or("    ".to_string()); // if there is none somehow we'll use spaces( chosen arbitrarily)
+
+    if indent.contains('\t') {
+        ("\t", indent.len())
+    } else {
+        ("    ", indent.len() / 4)
+    }
 }
 
 #[cfg(test)]
@@ -234,32 +250,6 @@ class Greeter:
         r#"# snakedown.testing.test_module
 
 This is a module that is used to test snakedown.
-
-## snakedown.testing.test_module.foo
-
-foo(bar: int) -> Dict[str, Any]
-
-this is a docstring for the foo function
-
-## snakedown.testing.test_module.Greeter
-
-this is a class docstring.
-
-### snakedown.testing.test_module.Greeter.greet
-
-greet(self, name, *args, foo: str = "bar", **kwargs) -> Callable[[], None]
-
-Greet the world.
-
-Parameters
-----------
-name: str
-    just a parameter. it's actually used for anything
-
-Returns
--------
-Callable[[], None]
-    just a random closure to make the types interesting to render.
 "#
     }
 
@@ -269,8 +259,8 @@ Callable[[], None]
         let mod_documentation = extract_module_documentation(&parsed, false, false);
 
         let rendered = render_module(
-            mod_documentation,
-            Some(String::from("snakedown.testing.test_module")),
+            &mod_documentation,
+            String::from("snakedown.testing.test_module"),
             &MdRenderer::new(),
         );
 
@@ -278,188 +268,24 @@ Callable[[], None]
 
         Ok(())
     }
-    fn expected_module_docs_no_prefix_no_name_rendered() -> &'static str {
-        r#"
-This is a module that is used to test snakedown.
 
-## foo
-
-foo(bar: int) -> Dict[str, Any]
-
-this is a docstring for the foo function
-
-## Greeter
-
-this is a class docstring.
-
-### Greeter.greet
-
-greet(self, name, *args, foo: str = "bar", **kwargs) -> Callable[[], None]
-
-Greet the world.
-
-Parameters
-----------
-name: str
-    just a parameter. it's actually used for anything
-
-Returns
--------
-Callable[[], None]
-    just a random closure to make the types interesting to render.
-"#
-    }
-
-    fn expected_module_docs_only_prefix_rendered() -> &'static str {
-        r#"# snakedown
-
-This is a module that is used to test snakedown.
-
-## snakedown.foo
-
-foo(bar: int) -> Dict[str, Any]
-
-this is a docstring for the foo function
-
-## snakedown.Greeter
-
-this is a class docstring.
-
-### snakedown.Greeter.greet
-
-greet(self, name, *args, foo: str = "bar", **kwargs) -> Callable[[], None]
-
-Greet the world.
-
-Parameters
-----------
-name: str
-    just a parameter. it's actually used for anything
-
-Returns
--------
-Callable[[], None]
-    just a random closure to make the types interesting to render.
-"#
-    }
-
-    #[test]
-    fn render_module_documentation_no_prefix() -> Result<()> {
-        let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(&parsed, false, false);
-
-        let rendered = render_module(mod_documentation, None, &MdRenderer::new());
-
-        assert_eq!(rendered, expected_module_docs_no_prefix_no_name_rendered());
-
-        Ok(())
-    }
-    #[test]
-    fn render_module_documentation_only_prefix() -> Result<()> {
-        let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(&parsed, false, false);
-
-        let rendered = render_module(
-            mod_documentation,
-            Some(String::from("snakedown")),
-            &MdRenderer::new(),
-        );
-
-        assert_eq!(rendered, expected_module_docs_only_prefix_rendered());
-
-        Ok(())
-    }
-
-    fn expected_module_docs_only_name_rendered() -> &'static str {
-        r#"# snakedown
-
-This is a module that is used to test snakedown.
-
-## snakedown.foo
-
-foo(bar: int) -> Dict[str, Any]
-
-this is a docstring for the foo function
-
-## snakedown.Greeter
-
-this is a class docstring.
-
-### snakedown.Greeter.greet
-
-greet(self, name, *args, foo: str = "bar", **kwargs) -> Callable[[], None]
-
-Greet the world.
-
-Parameters
-----------
-name: str
-    just a parameter. it's actually used for anything
-
-Returns
--------
-Callable[[], None]
-    just a random closure to make the types interesting to render.
-"#
-    }
     fn expected_module_docs_zola_rendered() -> &'static str {
         r#"+++
 title = "snakedown"
 +++
 
 This is a module that is used to test snakedown.
-
-## snakedown.foo
-
-foo(bar: int) -> Dict[str, Any]
-
-this is a docstring for the foo function
-
-## snakedown.Greeter
-
-this is a class docstring.
-
-### snakedown.Greeter.greet
-
-greet(self, name, *args, foo: str = "bar", **kwargs) -> Callable[[], None]
-
-Greet the world.
-
-Parameters
-----------
-name: str
-    just a parameter. it's actually used for anything
-
-Returns
--------
-Callable[[], None]
-    just a random closure to make the types interesting to render.
 "#
     }
 
-    #[test]
-    fn render_module_documentation_only_name() -> Result<()> {
-        let parsed = parse_python_str(test_dirty_module_str())?;
-        let mod_documentation = extract_module_documentation(&parsed, false, false);
-
-        let rendered = render_module(
-            mod_documentation,
-            Some("snakedown".to_string()),
-            &MdRenderer::new(),
-        );
-
-        assert_eq!(rendered, expected_module_docs_only_name_rendered());
-
-        Ok(())
-    }
     #[test]
     fn render_module_documentation_zola() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
         let mod_documentation = extract_module_documentation(&parsed, false, false);
 
         let rendered = render_module(
-            mod_documentation,
-            Some(String::from("snakedown")),
+            &mod_documentation,
+            String::from("snakedown"),
             &ZolaRenderer::new(false),
         );
 

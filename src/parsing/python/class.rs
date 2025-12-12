@@ -2,7 +2,7 @@ use rustpython_parser::ast::{Identifier, StmtClassDef};
 
 use super::{function::FunctionDocumentation, utils::extract_docstring_from_body};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClassDocumentation {
     pub name: Identifier,
     pub docstring: Option<String>,
@@ -45,6 +45,10 @@ class Greeter:
     '''
     this is a class docstring.
 
+        this line has exactly one indent!
+
+
+
     '''
 
     class_var = "whatever"
@@ -84,10 +88,9 @@ class Greeter:
         assert_eq!(
             docstring,
             Some(String::from(
-                r"
-    this is a class docstring.
+                r"this is a class docstring.
 
-    "
+        this line has exactly one indent!"
             ))
         );
         Ok(())

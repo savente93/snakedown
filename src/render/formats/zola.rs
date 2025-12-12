@@ -21,12 +21,7 @@ impl ZolaRenderer {
 }
 impl Renderer for ZolaRenderer {
     fn render_header(&self, content: &str, level: usize) -> String {
-        let mut out = String::new();
-        out.push_str(&"#".repeat(level));
-        out.push(' ');
-        out.push_str(content);
-        out.push('\n');
-        out
+        format!("{} {}", &"#".repeat(level), content.trim())
     }
 
     fn render_front_matter(&self, title: Option<&str>) -> String {
@@ -35,7 +30,7 @@ impl Renderer for ZolaRenderer {
         if let Some(t) = title {
             out.push_str(&format!("title = \"{t}\"\n"));
         };
-        out.push_str("+++\n");
+        out.push_str("+++");
         out
     }
 
@@ -75,7 +70,7 @@ mod test {
         let obj_name = String::from("foo.bar.nasty-names_with_underscores_and_emoji_🙈");
         assert_eq!(
             renderer.render_header(&obj_name, 2),
-            "## foo.bar.nasty-names_with_underscores_and_emoji_🙈\n"
+            "## foo.bar.nasty-names_with_underscores_and_emoji_🙈"
         );
         Ok(())
     }
@@ -85,8 +80,7 @@ mod test {
         assert_eq!(
             ZolaRenderer::new(false).render_front_matter(None),
             r"+++
-+++
-"
++++"
         );
         Ok(())
     }
@@ -140,8 +134,7 @@ mod test {
             ZolaRenderer::new(false).render_front_matter(Some("foo")),
             r#"+++
 title = "foo"
-+++
-"#
++++"#
         );
         Ok(())
     }
