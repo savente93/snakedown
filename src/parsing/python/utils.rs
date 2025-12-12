@@ -40,7 +40,7 @@ pub(crate) fn extract_docstring_from_body(body: &[Stmt]) -> Option<String> {
 #[cfg(test)]
 mod test {
 
-    use crate::parsing::module::extract_module_documentation;
+    use crate::parsing::python::module::extract_module_documentation;
 
     use super::*;
 

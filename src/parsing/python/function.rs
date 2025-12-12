@@ -59,7 +59,9 @@ mod test {
 
     use color_eyre::Result;
 
-    use crate::parsing::{module::extract_module_documentation, utils::parse_python_str};
+    use crate::parsing::{
+        python::module::extract_module_documentation, python::utils::parse_python_str,
+    };
 
     fn test_python_func_no_types() -> &'static str {
         "
