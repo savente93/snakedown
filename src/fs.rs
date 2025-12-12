@@ -8,6 +8,8 @@ use walkdir::WalkDir;
 
 use color_eyre::eyre::{OptionExt, Result, eyre};
 
+use crate::indexing::index::Index;
+
 /// determines whether given path is a Python module
 /// i.e. a file with a .py extension
 /// see <https://docs.python.org/3/tutorial/modules.html#modules>
@@ -209,6 +211,25 @@ pub struct PackageIndex {
     pub package_paths: Vec<PathBuf>,
 }
 
+pub fn crawl_package(
+    index: &mut Index,
+    pkg_path: &Path,
+    skip_private: bool,
+    exclude: Vec<PathBuf>,
+) -> Result<()> {
+    for entry in WalkDir::new(pkg_path)
+        .into_iter()
+        .filter_entry(|e| should_include(e.path(), skip_private, &exclude))
+    {
+        let path = entry?.into_path();
+        if path.is_file() {
+            tracing::debug!("Indexing {}", &path.display());
+            index.index_file(path)?;
+        }
+    }
+    Ok(())
+}
+
 /// will walk the provided path and index all the subpackages and modules
 /// # Errors
 /// Can error on fs errors
@@ -219,7 +240,6 @@ pub fn walk_package(
 ) -> Result<PackageIndex> {
     let mut modules = vec![];
     let mut sub_packages = vec![];
-
     for entry in WalkDir::new(pkg_path)
         .into_iter()
         .filter_entry(|e| should_include(e.path(), skip_private, &exclude))

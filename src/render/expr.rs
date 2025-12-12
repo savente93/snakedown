@@ -256,7 +256,7 @@ pub fn render_expr(expr: Expr) -> String {
         }
     }
 
-    out
+    out.trim().to_string()
 }
 
 fn render_comprehension(comp: Comprehension) -> String {

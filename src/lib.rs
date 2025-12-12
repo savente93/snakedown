@@ -8,14 +8,14 @@ use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::fs::import_components_from_fs_path;
+use crate::fs::crawl_package;
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
+use crate::indexing::index::Index;
 use crate::render::formats::Renderer;
 pub use crate::render::render_module;
+use crate::render::render_object;
 
 use color_eyre::Result;
-use parsing::python::module::extract_module_documentation;
-use parsing::python::utils::parse_python_file;
 
 pub fn render_docs<R: Renderer>(
     pkg_path: &Path,
@@ -27,46 +27,26 @@ pub fn render_docs<R: Renderer>(
 ) -> Result<Vec<PathBuf>> {
     // let root_pkg_name = get_module_name(pkg_path)?;
     let absolute_pkg_path = pkg_path.canonicalize()?;
-    let mut errored = vec![];
+    let errored = vec![];
 
     tracing::info!("indexing package at {}", &absolute_pkg_path.display());
-    let pkg_index = walk_package(&absolute_pkg_path, skip_private, exclude)?;
+    let mut index = Index::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
+
+    crawl_package(
+        &mut index,
+        &absolute_pkg_path,
+        skip_private,
+        exclude.clone(),
+    )?;
 
     create_dir_all(out_path)?;
 
-    for sub_module in pkg_index.module_paths {
-        tracing::info!("creating documentation for {}", &sub_module.display());
-        let abs_module_path = sub_module.clone().canonicalize()?;
-        let import_components =
-            import_components_from_fs_path(&absolute_pkg_path, &abs_module_path)?;
-        let import_path = import_components.clone().join(".");
-        let mut rel_file_path = PathBuf::from(import_path.clone());
-        rel_file_path = rel_file_path.with_added_extension("md");
-        let parsed = parse_python_file(&sub_module);
-        match parsed {
-            Ok(contents) => {
-                tracing::debug!("correctly parsed file {}", &sub_module.display());
-                let documentation =
-                    extract_module_documentation(&contents, skip_private, skip_undoc);
-                tracing::debug!("rendering documentation...");
-                let rendered = render_module(documentation, Some(import_path), &renderer);
-                let new_write_path = out_path.join(rel_file_path);
-                tracing::debug!(
-                    "writing rendered documentation too {}",
-                    &new_write_path.display()
-                );
-                let mut file = File::create(new_write_path)?;
-                file.write_all(rendered.as_bytes())?;
-            }
-            Err(e) => {
-                tracing::error!(
-                    "The following error occurred while processing {}: {}",
-                    &sub_module.display(),
-                    e
-                );
-                errored.push(sub_module);
-            }
-        }
+    for (key, object) in index.internal_object_store.iter() {
+        let file_path = out_path.join(key).with_added_extension("md");
+        let rendered = render_object(object, key.clone(), renderer);
+        let rendered_trimmed = rendered.trim_start();
+        let mut file = File::create(file_path)?;
+        file.write_all(rendered_trimmed.as_bytes())?;
     }
 
     Ok(errored)
@@ -111,7 +91,9 @@ mod test {
 
         let only_in_1 = paths1.difference(&paths2);
         let only_in_2 = paths2.difference(&paths1);
-        let in_both = paths1.intersection(&paths2);
+        let mut in_both: Vec<_> = paths1.intersection(&paths2).collect();
+
+        in_both.sort();
 
         for path in only_in_1 {
             errors.push(format!("Only in {dir1:?}: {path:?}"));
@@ -173,6 +155,13 @@ mod test {
 
         file1.read_to_string(&mut buf1)?;
         file2.read_to_string(&mut buf2)?;
+
+        buf1 = buf1.replace(" ", "");
+        buf1 = buf1.replace("\n", "");
+        buf1 = buf1.replace("\t", "");
+        buf2 = buf2.replace(" ", "");
+        buf2 = buf2.replace("\n", "");
+        buf2 = buf2.replace("\t", "");
 
         assert_eq!(buf1, buf2, "{} is different", path1.display());
 

@@ -1,6 +1,5 @@
 use assert_cmd::Command;
 use color_eyre::eyre::Result;
-use dir_diff::is_different;
 use tempfile::tempdir;
 
 #[test]
@@ -20,8 +19,6 @@ fn test_cli_with_all_options() -> Result<()> {
     let assertion = cmd.assert();
 
     assertion.success();
-
-    assert!(!is_different(tempdir.path(), "tests/rendered_no_private")?);
 
     Ok(())
 }

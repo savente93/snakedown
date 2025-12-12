@@ -9,7 +9,7 @@ use super::{
     utils::extract_docstring_from_body,
 };
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct ModuleDocumentation {
     pub docstring: Option<String>,
     pub functions: Vec<FunctionDocumentation>,
@@ -22,13 +22,6 @@ pub struct ModuleDocumentation {
 pub struct ModuleReference {
     pub name: String,
     pub path: PathBuf,
-}
-
-impl ModuleDocumentation {
-    pub fn with_sub_modules(&mut self, subs: Option<&Vec<PathBuf>>) -> &mut Self {
-        self.sub_modules = subs.cloned();
-        self
-    }
 }
 
 // just a conveneience function

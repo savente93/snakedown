@@ -4,7 +4,7 @@ use rustpython_parser::ast::{
 
 use super::utils::extract_docstring_from_body;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionDocumentation {
     pub name: String,
     pub docstring: Option<String>,
@@ -17,7 +17,7 @@ impl From<&StmtFunctionDef> for FunctionDocumentation {
     fn from(value: &StmtFunctionDef) -> Self {
         Self {
             name: value.name.to_string(),
-            docstring: extract_docstring_from_body(&value.body),
+            docstring: extract_docstring_from_body(&value.body).map(|s| s.trim().to_string()),
             return_type: value.returns.as_ref().map(|r| *r.clone()),
             args: *value.args.clone(),
             generics: value.type_params.clone(),
@@ -84,7 +84,7 @@ def is_odd(i):
 
     Returns
     -------
-    bool: True iff input number is odd
+        bool: True iff input number is odd
     '''
     return bool(i & 1)
         "
@@ -207,13 +207,11 @@ def return_none(foo: str, bar, *args, unused: Dict[Any, str] = None) -> 4+9:
         assert_eq!(
             docstring,
             Some(String::from(
-                r"
-    Determine whether a number is odd.
+                r"Determine whether a number is odd.
 
     Returns
     -------
-    bool: True iff input number is odd
-    "
+        bool: True iff input number is odd"
             ))
         );
         Ok(())
