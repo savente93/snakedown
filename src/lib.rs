@@ -71,48 +71,48 @@ mod test {
 
     /// Asserts that two directory trees are identical in structure and content.
     /// Reports all differences including missing files and content mismatches.
-    pub fn assert_dir_trees_equal<P: AsRef<Path>>(dir1: P, dir2: P) {
-        match compare_dirs(dir1.as_ref(), dir2.as_ref()) {
+    pub fn assert_dir_trees_equal<P: AsRef<Path>>(expected: P, actual: P) {
+        match compare_dirs(expected.as_ref(), actual.as_ref()) {
             Ok(_) => (),
             Err(e) => panic!("Directory trees differ:\n{e}"),
         }
     }
 
     #[allow(clippy::unwrap_used)]
-    fn compare_dirs(dir1: &Path, dir2: &Path) -> Result<()> {
-        let entries1 = collect_files(dir1)?;
-        let entries2 = collect_files(dir2)?;
+    fn compare_dirs(expected: &Path, actual: &Path) -> Result<()> {
+        let entries_expected = collect_files(expected)?;
+        let entries_actual = collect_files(actual)?;
 
         let mut errors = Vec::new();
 
         // Get all unique relative paths from both directories
-        let paths1: HashSet<_> = entries1.keys().collect();
-        let paths2: HashSet<_> = entries2.keys().collect();
+        let paths_expected: HashSet<_> = entries_expected.keys().collect();
+        let paths_actual: HashSet<_> = entries_actual.keys().collect();
 
-        let only_in_1 = paths1.difference(&paths2);
-        let only_in_2 = paths2.difference(&paths1);
-        let mut in_both: Vec<_> = paths1.intersection(&paths2).collect();
+        let only_in_expected = paths_expected.difference(&paths_actual);
+        let only_in_actual = paths_actual.difference(&paths_expected);
+        let mut in_both: Vec<_> = paths_expected.intersection(&paths_actual).collect();
 
         in_both.sort();
 
-        for path in only_in_1 {
-            errors.push(format!("Only in {dir1:?}: {path:?}"));
+        for path in only_in_expected {
+            errors.push(format!("Only in {expected:?}(expected): {path:?}"));
         }
 
-        for path in only_in_2 {
-            errors.push(format!("Only in {dir2:?}: {path:?}"));
+        for path in only_in_actual {
+            errors.push(format!("Only in {actual:?}(actual): {path:?}"));
         }
 
         for path in in_both {
-            let full1 = entries1.get(*path).unwrap();
-            let full2 = entries2.get(*path).unwrap();
+            let full_expected = entries_expected.get(*path).unwrap();
+            let full_actual = entries_actual.get(*path).unwrap();
 
-            let meta1 = full1.metadata().wrap_err("reading metadata 1")?;
-            let meta2 = full2.metadata().wrap_err("reading metadata 2")?;
+            let meta_expected = full_expected.metadata().wrap_err("reading metadata 1")?;
+            let meta_actual = full_actual.metadata().wrap_err("reading metadata 2")?;
 
-            match (meta1.is_file(), meta2.is_file()) {
+            match (meta_expected.is_file(), meta_actual.is_file()) {
                 (true, true) => {
-                    if let Err(e) = compare_files(full1, full2) {
+                    if let Err(e) = compare_files(full_expected, full_actual) {
                         errors.push(format!("Content differs at {path:?}: {e}"));
                     }
                 }
@@ -146,24 +146,22 @@ mod test {
     }
 
     /// Compares the content of two files.
-    fn compare_files(path1: &Path, path2: &Path) -> io::Result<()> {
-        let mut file1 = fs::File::open(path1)?;
-        let mut file2 = fs::File::open(path2)?;
+    fn compare_files(expected: &Path, actual: &Path) -> io::Result<()> {
+        let mut file_expected = fs::File::open(expected)?;
+        let mut file_actual = fs::File::open(actual)?;
 
-        let mut buf1 = String::new();
-        let mut buf2 = String::new();
+        let mut buf_expected = String::new();
+        let mut buf_actual = String::new();
 
-        file1.read_to_string(&mut buf1)?;
-        file2.read_to_string(&mut buf2)?;
+        file_expected.read_to_string(&mut buf_expected)?;
+        file_actual.read_to_string(&mut buf_actual)?;
 
-        buf1 = buf1.replace(" ", "");
-        buf1 = buf1.replace("\n", "");
-        buf1 = buf1.replace("\t", "");
-        buf2 = buf2.replace(" ", "");
-        buf2 = buf2.replace("\n", "");
-        buf2 = buf2.replace("\t", "");
-
-        assert_eq!(buf1, buf2, "{} is different", path1.display());
+        assert_eq!(
+            buf_expected,
+            buf_actual,
+            "{} is different",
+            expected.display()
+        );
 
         Ok(())
     }
@@ -186,7 +184,7 @@ mod test {
             &MdRenderer::new(),
         )?;
 
-        assert_dir_trees_equal(temp_dir.path(), &expected_result_dir);
+        assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
         Ok(())
     }
@@ -208,7 +206,7 @@ mod test {
             &MdRenderer::new(),
         )?;
 
-        assert_dir_trees_equal(temp_dir.path(), &expected_result_dir);
+        assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
         Ok(())
     }
