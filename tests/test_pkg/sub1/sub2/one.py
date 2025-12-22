@@ -4,7 +4,7 @@ one.py
 Module with simple utility functions.
 
 See also:
-    [[two]]
+    [[test_pkg.sub1.sub2.two]]
 """
 
 
@@ -23,7 +23,7 @@ def is_even(num: int) -> bool:
         True
 
     See Also:
-        [[is_odd]]
+        [[test_pkg.sub1.sub2.one.is_odd]]
     """
     return num % 2 == 0
 

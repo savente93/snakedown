@@ -117,6 +117,7 @@ pub enum PyRole {
 #[strum(serialize_all = "camelCase")]
 pub enum RstRole {}
 
+#[derive(Debug)]
 pub struct ExternalSphinxRef {
     pub name: String,
     // type is a reserved keyword

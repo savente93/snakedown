@@ -4,9 +4,9 @@ bar.py
 Example module with a function and a class.
 
 See Also:
-    [[greet]]
-    [[Greeter]]
-    [[Greeter.greet]]
+    [[test_pkg.bar.greet]]
+    [[test_pkg.bar.Greeter]]
+    [[test_pkg.bar.Greeter.greet]]
 """
 
 DEFAULT_GREETING = "Hello"
@@ -14,7 +14,7 @@ DEFAULT_GREETING = "Hello"
 
 def greet(name: str) -> str:
     """
-    Return a greeting message. This function is part of [[bar|The `bar` Module]]
+    Return a greeting message. This function is part of [[test_pkg.bar|The `bar` Module]]
 
 
     Args:
@@ -68,7 +68,7 @@ class Greeter:
 
     def greet(self) -> str:
         """
-        Generate a greeting message. This is a method on the [[Greerter]] class.
+        Generate a greeting message. This is a method on the [[test_pkg.bar.Greeter]] class.
         It is distinct from the [[test_pkg.bar.greet]] function.
 
         Returns:
