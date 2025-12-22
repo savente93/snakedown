@@ -13,3 +13,6 @@ Returns:
 Example:
     >>> is_even(4)
     True
+
+See Also:
+    [[is_odd]]

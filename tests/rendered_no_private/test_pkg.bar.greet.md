@@ -2,7 +2,8 @@
 
 greet(name: str) -> str
 
-Return a greeting message.
+Return a greeting message. This function is part of [[bar|The `bar` Module]]
+
 
 Args:
     name (str): Name to greet.
