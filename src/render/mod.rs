@@ -110,13 +110,7 @@ fn render_class_docs<R: Renderer>(
     out.push('\n');
 
     if let Some(docstring) = &class_docs.docstring {
-        let (indent_str, level) = detect_docstring_indent_prefix(docstring);
-        let docstring_ident_stripped = docstring
-            .split("\n")
-            .map(|s| s.strip_prefix(&indent_str.repeat(level + 1)).unwrap_or(s))
-            .collect::<Vec<_>>()
-            .join("\n");
-        out.push_str(&docstring_ident_stripped);
+        out.push_str(docstring);
         out.push('\n');
     }
 
@@ -140,43 +134,15 @@ fn render_function_docs<R: Renderer>(
     out.push(')');
     if let Some(return_annotation) = fn_docs.return_type.clone() {
         out.push_str(&format!(" -> {}", render_expr(return_annotation)));
-        out.push('\n');
     }
 
     if let Some(docstring) = fn_docs.docstring.clone() {
         out.push('\n');
-        let (indent_str, level) = detect_docstring_indent_prefix(&docstring);
-        let docstring_ident_stripped = docstring
-            .split("\n")
-            .map(|s| s.strip_prefix(&indent_str.repeat(level + 2)).unwrap_or(s))
-            .collect::<Vec<_>>()
-            .join("\n");
-        out.push_str(docstring_ident_stripped.trim());
+        out.push('\n');
+        out.push_str(docstring.trim());
     }
     out.push('\n');
     out
-}
-
-/// Detects the common indentation prefix of a Python docstring.
-/// Returns the leading whitespace (spaces/tabs) of the least-indented non-empty line after the first.
-/// This handles both spaces and tabs without normalization.
-fn detect_docstring_indent_prefix(docstring: &str) -> (&str, usize) {
-    let indent = docstring
-        .lines()
-        .filter(|line| !line.trim().is_empty()) // skip lines that are fully empty or just whitespace
-        .map(|line| {
-            line.chars()
-                .take_while(|c| c.is_whitespace())
-                .collect::<String>()
-        })
-        .min_by_key(|prefix| prefix.len()) // get the shortest non-empty indent
-        .unwrap_or("    ".to_string()); // if there is none somehow we'll use spaces( chosen arbitrarily)
-
-    if indent.contains('\t') {
-        ("\t", indent.len())
-    } else {
-        ("    ", indent.len() / 4)
-    }
 }
 
 #[cfg(test)]

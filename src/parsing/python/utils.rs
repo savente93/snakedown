@@ -1,4 +1,7 @@
-use color_eyre::Result;
+use color_eyre::{
+    Result,
+    eyre::{OptionExt, eyre},
+};
 use rustpython_parser::{
     Mode,
     ast::{Constant, Expr, ExprConstant, Mod, Stmt, StmtExpr},
@@ -19,7 +22,7 @@ pub fn parse_python_str(content: &str) -> Result<Mod> {
     Ok(parsed?)
 }
 
-pub(crate) fn extract_docstring_from_body(body: &[Stmt]) -> Option<String> {
+pub(crate) fn extract_docstring_from_body(body: &[Stmt], indent_level: usize) -> Option<String> {
     match body.first() {
         Some(Stmt::Expr(StmtExpr { range: _, value })) => {
             if let Expr::Constant(ExprConstant {
@@ -28,7 +31,42 @@ pub(crate) fn extract_docstring_from_body(body: &[Stmt]) -> Option<String> {
                 kind: _,
             }) = &**value
             {
-                Some(s.trim().to_string().clone())
+                let raw_docstring = s;
+
+                // API specifies that we might fail
+                // but this should never happen for wellformed python
+                // since that would have been an indent error earlier
+                // so if we touch that case, we did something wrong
+                #[allow(clippy::expect_used)]
+                let docstring_stripped: String = raw_docstring
+                    .lines()
+                    .map(|line| {
+                        // PEP 8 says use 4 spaces, and that is mostly the default
+                        // might make this more flexible at some point
+                        let prefix = "    ".repeat(indent_level);
+
+                        if line.is_empty()
+                            || !line
+                                .chars()
+                                .next()
+                                .map(|c| c.is_whitespace())
+                                .unwrap_or(false)
+                        {
+                            // let's not touch empty lines
+                            Ok(line)
+                        } else {
+                            line.strip_prefix(&prefix).ok_or_eyre(eyre!(
+                                "line `{}` did not contain prefix {:?} (expected indent level: {})",
+                                line,
+                                prefix,
+                                indent_level
+                            ))
+                        }
+                    })
+                    .collect::<Result<Vec<&str>>>()
+                    .expect("Could not consistently strip prefix. most likely a bug in program")
+                    .join("\n");
+                Some(docstring_stripped.trim().to_string().clone())
             } else {
                 None
             }

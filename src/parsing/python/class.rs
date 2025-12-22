@@ -9,15 +9,15 @@ pub struct ClassDocumentation {
     pub methods: Vec<FunctionDocumentation>,
 }
 
-impl From<&StmtClassDef> for ClassDocumentation {
-    fn from(value: &StmtClassDef) -> Self {
+impl ClassDocumentation {
+    pub fn from_class_statements(value: &StmtClassDef, body_indent_level: usize) -> Self {
         Self {
             name: value.name.clone(),
-            docstring: extract_docstring_from_body(&value.body),
+            docstring: extract_docstring_from_body(&value.body, body_indent_level),
             methods: value
                 .body
                 .iter()
-                .filter_map(|s| FunctionDocumentation::try_from(s).ok())
+                .filter_map(|s| FunctionDocumentation::from_statements(s, body_indent_level))
                 .collect(),
         }
     }
@@ -90,7 +90,7 @@ class Greeter:
             Some(String::from(
                 r"this is a class docstring.
 
-        this line has exactly one indent!"
+    this line has exactly one indent!"
             ))
         );
         Ok(())
