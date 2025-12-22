@@ -2,7 +2,7 @@
 
 greet(name: str) -> str
 
-Return a greeting message. This function is part of [[bar|The `bar` Module]]
+Return a greeting message. This function is part of [[test_pkg.bar|The `bar` Module]]
 
 
 Args:

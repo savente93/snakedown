@@ -2,6 +2,8 @@ use rustpython_parser::ast::{
     Arguments, Expr, Stmt, StmtAsyncFunctionDef, StmtFunctionDef, TypeParam,
 };
 
+use crate::indexing::object_ref::{ObjectRef, extract_object_refs};
+
 use super::utils::extract_docstring_from_body;
 
 #[derive(Debug, Clone)]
@@ -14,6 +16,12 @@ pub struct FunctionDocumentation {
 }
 
 impl FunctionDocumentation {
+    pub fn extract_used_references(&self) -> Vec<ObjectRef> {
+        match &self.docstring {
+            Some(s) => extract_object_refs(s),
+            None => vec![],
+        }
+    }
     pub fn from_statements(value: &Stmt, body_indent_level: usize) -> Option<Self> {
         match value {
             Stmt::AsyncFunctionDef(stmt_async_function_def) => {
