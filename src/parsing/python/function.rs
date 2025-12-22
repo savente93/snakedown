@@ -13,39 +13,45 @@ pub struct FunctionDocumentation {
     pub generics: Vec<TypeParam>,
 }
 
-impl From<&StmtFunctionDef> for FunctionDocumentation {
-    fn from(value: &StmtFunctionDef) -> Self {
-        Self {
-            name: value.name.to_string(),
-            docstring: extract_docstring_from_body(&value.body).map(|s| s.trim().to_string()),
-            return_type: value.returns.as_ref().map(|r| *r.clone()),
-            args: *value.args.clone(),
-            generics: value.type_params.clone(),
-        }
-    }
-}
-
-impl From<&StmtAsyncFunctionDef> for FunctionDocumentation {
-    fn from(value: &StmtAsyncFunctionDef) -> Self {
-        Self {
-            name: value.name.to_string(),
-            docstring: extract_docstring_from_body(&value.body),
-            return_type: value.returns.as_ref().map(|r| *r.clone()),
-            args: *value.args.clone(),
-            generics: value.type_params.clone(),
-        }
-    }
-}
-
-impl TryFrom<&Stmt> for FunctionDocumentation {
-    type Error = ();
-
-    fn try_from(value: &Stmt) -> std::result::Result<Self, Self::Error> {
+impl FunctionDocumentation {
+    pub fn from_statements(value: &Stmt, body_indent_level: usize) -> Option<Self> {
         match value {
-            Stmt::FunctionDef(stmt_function_def) => {
-                Ok(FunctionDocumentation::from(stmt_function_def))
+            Stmt::AsyncFunctionDef(stmt_async_function_def) => {
+                Some(FunctionDocumentation::from_async_function_statements(
+                    stmt_async_function_def,
+                    body_indent_level + 1,
+                ))
             }
-            _ => Err(()),
+            Stmt::FunctionDef(stmt_function_def) => {
+                Some(FunctionDocumentation::from_function_statements(
+                    stmt_function_def,
+                    body_indent_level + 1,
+                ))
+            }
+            _ => None,
+        }
+    }
+    pub fn from_async_function_statements(
+        value: &StmtAsyncFunctionDef,
+        body_indent_level: usize,
+    ) -> Self {
+        Self {
+            name: value.name.to_string(),
+            docstring: extract_docstring_from_body(&value.body, body_indent_level)
+                .map(|s| s.trim().to_string()),
+            return_type: value.returns.as_ref().map(|r| *r.clone()),
+            args: *value.args.clone(),
+            generics: value.type_params.clone(),
+        }
+    }
+    pub fn from_function_statements(value: &StmtFunctionDef, body_indent_level: usize) -> Self {
+        Self {
+            name: value.name.to_string(),
+            docstring: extract_docstring_from_body(&value.body, body_indent_level)
+                .map(|s| s.trim().to_string()),
+            return_type: value.returns.as_ref().map(|r| *r.clone()),
+            args: *value.args.clone(),
+            generics: value.type_params.clone(),
         }
     }
 }
@@ -76,6 +82,19 @@ async def is_odd(i):
         "
     }
 
+    fn test_python_async_func_docstring() -> &'static str {
+        "
+async def is_odd(i):
+    '''
+    Determine whether a number is odd.
+
+    Returns
+    -------
+        bool: True iff input number is odd
+    '''
+    return bool(i & 1)
+        "
+    }
     fn test_python_func_docstring() -> &'static str {
         "
 def is_odd(i):
@@ -196,6 +215,27 @@ def return_none(foo: str, bar, *args, unused: Dict[Any, str] = None) -> 4+9:
         Ok(())
     }
     #[test]
+    fn parse_test_python_async_function_docstring() -> Result<()> {
+        let program = parse_python_str(test_python_async_func_docstring())?;
+
+        let documentation = extract_module_documentation(&program, false, false);
+        // we checked before there is at least one class, so this is safe
+        #[allow(clippy::unwrap_used)]
+        let function = documentation.functions.first().unwrap();
+        let docstring = function.docstring.clone();
+        assert_eq!(
+            docstring,
+            Some(String::from(
+                r"Determine whether a number is odd.
+
+Returns
+-------
+    bool: True iff input number is odd"
+            ))
+        );
+        Ok(())
+    }
+    #[test]
     fn parse_test_python_function_docstring() -> Result<()> {
         let program = parse_python_str(test_python_func_docstring())?;
 
@@ -209,9 +249,9 @@ def return_none(foo: str, bar, *args, unused: Dict[Any, str] = None) -> 4+9:
             Some(String::from(
                 r"Determine whether a number is odd.
 
-    Returns
-    -------
-        bool: True iff input number is odd"
+Returns
+-------
+    bool: True iff input number is odd"
             ))
         );
         Ok(())
