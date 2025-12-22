@@ -4,5 +4,5 @@ __init__(self, factor: int = DEFAULT_FACTOR)
 
 Initialize with a multiplication factor.
 
-    Args:
-        factor (int): Factor to multiply values by.
+Args:
+    factor (int): Factor to multiply values by.

@@ -31,6 +31,7 @@ pub fn extract_module_documentation(
     skip_undoc: bool,
 ) -> ModuleDocumentation {
     if let Mod::Module(mod_module) = input_module {
+        // a module is required to have indent 0
         extract_documentation_from_statements(&mod_module.body, skip_private, skip_undoc)
     } else {
         ModuleDocumentation::default()
@@ -67,7 +68,8 @@ fn extract_documentation_from_statements(
     let mut free_functions = vec![];
     let mut class_definitions = vec![];
     let mut exports = None;
-    let docstring = extract_docstring_from_body(statements);
+    // a module is required to have indent 0
+    let docstring = extract_docstring_from_body(statements, 0);
     for statement in statements {
         if let Stmt::Assign(stmt_assign) = statement {
             match (&mut exports, extract_exports_from_statement(stmt_assign)) {
@@ -80,7 +82,8 @@ fn extract_documentation_from_statements(
             }
         }
         if let Stmt::FunctionDef(stmt_function_def) = statement {
-            let function_doc: FunctionDocumentation = stmt_function_def.into();
+            let function_doc: FunctionDocumentation =
+                FunctionDocumentation::from_function_statements(stmt_function_def, 1);
             if function_doc.docstring.is_none() && skip_undoc {
                 tracing::debug!(
                     "skipping function {} because it is undocumented",
@@ -99,7 +102,8 @@ fn extract_documentation_from_statements(
             free_functions.push(function_doc);
         }
         if let Stmt::AsyncFunctionDef(stmt_async_function_def) = statement {
-            let function_doc: FunctionDocumentation = stmt_async_function_def.into();
+            let function_doc: FunctionDocumentation =
+                FunctionDocumentation::from_async_function_statements(stmt_async_function_def, 1);
             if function_doc.docstring.is_none() && skip_undoc {
                 tracing::debug!(
                     "skipping function {} because it is undocumented",
@@ -118,7 +122,8 @@ fn extract_documentation_from_statements(
             free_functions.push(function_doc);
         }
         if let Stmt::ClassDef(stmt_class_def) = statement {
-            let class_doc: ClassDocumentation = stmt_class_def.into();
+            let class_doc: ClassDocumentation =
+                ClassDocumentation::from_class_statements(stmt_class_def, 1);
             if is_private_class(&class_doc) && skip_private {
                 tracing::debug!("skipping class {} because it is private", class_doc.name,);
                 continue;
