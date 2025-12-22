@@ -3,3 +3,6 @@
 one.py
 
 Module with simple utility functions.
+
+See also:
+    [[two]]
