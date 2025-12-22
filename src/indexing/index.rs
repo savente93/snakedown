@@ -7,16 +7,18 @@ use crate::parsing::{
         utils::parse_python_file,
     },
 };
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{Report, Result, eyre::eyre};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
+use url::Url;
 
 #[derive(Debug)]
 pub struct Index {
     pub pkg_name: String,
     pub internal_object_store: HashMap<String, ObjectDocumentation>,
+    pub external_object_store: HashMap<String, Url>,
     pub skip_undoc: bool,
     pub skip_private: bool,
     pub pkg_root: PathBuf,
@@ -32,6 +34,7 @@ impl Index {
         Ok(Self {
             pkg_name,
             internal_object_store: HashMap::new(),
+            external_object_store: HashMap::new(),
             pkg_root,
             skip_undoc,
             skip_private,
@@ -89,6 +92,31 @@ impl Index {
                 );
                 Err(e)
             }
+        }
+    }
+
+    pub fn validate_references(&self) -> Result<(), Vec<Report>> {
+        let mut errors: Vec<_> = Vec::new();
+        for (key, obj) in self.internal_object_store.iter() {
+            let used_references = obj.extract_used_references();
+            for used_ref in used_references {
+                if !self
+                    .internal_object_store
+                    .contains_key(&used_ref.fully_qualified_name)
+                {
+                    errors.push(eyre!(
+                        "unknown reference: {}, in object {}",
+                        used_ref.fully_qualified_name,
+                        key
+                    ));
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
         }
     }
 }

@@ -16,6 +16,7 @@ pub use crate::render::render_module;
 use crate::render::render_object;
 
 use color_eyre::Result;
+use color_eyre::eyre::eyre;
 use tera::Context;
 
 pub fn render_docs<R: Renderer>(
@@ -26,7 +27,6 @@ pub fn render_docs<R: Renderer>(
     exclude: Vec<PathBuf>,
     renderer: &R,
 ) -> Result<Vec<PathBuf>> {
-    // let root_pkg_name = get_module_name(pkg_path)?;
     let absolute_pkg_path = pkg_path.canonicalize()?;
     let errored = vec![];
 
@@ -37,12 +37,23 @@ pub fn render_docs<R: Renderer>(
     tracing::info!("indexing package at {}", &absolute_pkg_path.display());
     let mut index = Index::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
 
+    // TODO: don't hardcode paths
+
     crawl_package(
         &mut index,
         &absolute_pkg_path,
         skip_private,
         exclude.clone(),
     )?;
+
+    match index.validate_references() {
+        Ok(_) => Ok(()),
+        Err(errors) => Err(eyre!(
+            "Found {} invalid references(s):\n{:?}",
+            errors.len(),
+            errors
+        )),
+    }?;
 
     create_dir_all(out_path)?;
 

@@ -5,6 +5,6 @@ bar.py
 Example module with a function and a class.
 
 See Also:
-    [[greet]]
-    [[Greeter]]
-    [[Greeter.greet]]
+    [[test_pkg.bar.greet]]
+    [[test_pkg.bar.Greeter]]
+    [[test_pkg.bar.Greeter.greet]]

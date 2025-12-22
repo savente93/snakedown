@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use color_eyre::{Result, eyre::eyre};
 use rustpython_parser::ast::{Mod, Stmt, StmtAssign};
 
+use crate::indexing::object_ref::{ObjectRef, extract_object_refs};
+
 use super::{
     class::{ClassDocumentation, is_private_class},
     function::{FunctionDocumentation, is_private_function},
@@ -24,7 +26,18 @@ pub struct ModuleReference {
     pub path: PathBuf,
 }
 
-// just a conveneience function
+impl ModuleDocumentation {
+    pub fn extract_used_references(&self) -> Vec<ObjectRef> {
+        match &self.docstring {
+            Some(s) => extract_object_refs(s),
+            None => Vec::new(),
+        }
+    }
+}
+
+// just a conveneience function so we don't have to worry about
+// inline modules defined in interactive sessions that we
+// don't have to handle here but which are technically possible
 pub fn extract_module_documentation(
     input_module: &Mod,
     skip_private: bool,

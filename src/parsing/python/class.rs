@@ -1,5 +1,7 @@
 use rustpython_parser::ast::{Identifier, StmtClassDef};
 
+use crate::indexing::object_ref::{ObjectRef, extract_object_refs};
+
 use super::{function::FunctionDocumentation, utils::extract_docstring_from_body};
 
 #[derive(Debug, Clone)]
@@ -19,6 +21,12 @@ impl ClassDocumentation {
                 .iter()
                 .filter_map(|s| FunctionDocumentation::from_statements(s, body_indent_level))
                 .collect(),
+        }
+    }
+    pub fn extract_used_references(&self) -> Vec<ObjectRef> {
+        match &self.docstring {
+            Some(s) => extract_object_refs(s),
+            None => Vec::new(),
         }
     }
 }
