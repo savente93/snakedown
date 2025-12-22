@@ -16,6 +16,7 @@ pub use crate::render::render_module;
 use crate::render::render_object;
 
 use color_eyre::Result;
+use tera::Context;
 
 pub fn render_docs<R: Renderer>(
     pkg_path: &Path,
@@ -28,6 +29,10 @@ pub fn render_docs<R: Renderer>(
     // let root_pkg_name = get_module_name(pkg_path)?;
     let absolute_pkg_path = pkg_path.canonicalize()?;
     let errored = vec![];
+
+    let mut ctx = Context::new();
+    let sd_version = env!("CARGO_PKG_VERSION_MAJOR");
+    ctx.insert("SNAKEDOWN_VERSION", &sd_version);
 
     tracing::info!("indexing package at {}", &absolute_pkg_path.display());
     let mut index = Index::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
@@ -43,7 +48,7 @@ pub fn render_docs<R: Renderer>(
 
     for (key, object) in index.internal_object_store.iter() {
         let file_path = out_path.join(key).with_added_extension("md");
-        let rendered = render_object(object, key.clone(), renderer);
+        let rendered = render_object(object, key.clone(), renderer, &ctx)?;
         let rendered_trimmed = rendered.trim_start();
         let mut file = File::create(file_path)?;
         file.write_all(rendered_trimmed.as_bytes())?;
