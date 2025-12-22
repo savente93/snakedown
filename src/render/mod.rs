@@ -1,6 +1,7 @@
 pub mod args;
 pub mod expr;
 pub mod formats;
+use color_eyre::Result;
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use strum::Display;
+use tera::{Context, Tera};
 
 use args::render_args;
 use expr::render_expr;
@@ -62,17 +64,27 @@ pub fn render_object<R: Renderer>(
     object: &ObjectDocumentation,
     fully_qualified_name: String,
     renderer: &R,
-) -> String {
+    ctx: &Context,
+) -> Result<String> {
     match object {
-        ObjectDocumentation::Class(class_documentation) => {
-            render_class_docs(class_documentation, &fully_qualified_name, renderer)
-        }
-        ObjectDocumentation::Module(module_documentation) => {
-            render_module(module_documentation, fully_qualified_name, renderer)
-        }
-        ObjectDocumentation::Function(function_documentation) => {
-            render_function_docs(function_documentation, &fully_qualified_name, renderer)
-        }
+        ObjectDocumentation::Class(class_documentation) => Ok(render_class_docs(
+            class_documentation,
+            &fully_qualified_name,
+            renderer,
+            ctx,
+        )?),
+        ObjectDocumentation::Module(module_documentation) => Ok(render_module(
+            module_documentation,
+            fully_qualified_name,
+            renderer,
+            ctx,
+        )?),
+        ObjectDocumentation::Function(function_documentation) => Ok(render_function_docs(
+            function_documentation,
+            &fully_qualified_name,
+            renderer,
+            ctx,
+        )?),
     }
 }
 
@@ -80,69 +92,81 @@ pub fn render_module<R: Renderer>(
     mod_doc: &ModuleDocumentation,
     fully_qualified_name: String,
     renderer: &R,
-) -> String {
-    let mut out = String::new();
+    ctx: &Context,
+) -> Result<String> {
+    let mut local_ctx = ctx.clone();
 
-    let front_matter_str = renderer.render_front_matter(Some(&fully_qualified_name));
-    if !front_matter_str.is_empty() {
-        out.push_str(&front_matter_str);
-        out.push('\n');
-        out.push('\n');
+    let front_matter = &renderer.render_front_matter(Some(&fully_qualified_name));
+    local_ctx.insert("SNAKEDOWN_FRONT_MATTER", &front_matter);
+
+    if let Some(docstring) = mod_doc.docstring.clone() {
+        local_ctx.insert("SNAKEDOWN_MODULE_DOCSTRING", docstring.trim());
     }
 
-    if let Some(docstring) = &mod_doc.docstring {
-        out.push_str(docstring);
-        out.push('\n');
-    }
+    let function_template = r#"{{ SNAKEDOWN_FRONT_MATTER }}
+{%if SNAKEDOWN_MODULE_DOCSTRING%}
+{{SNAKEDOWN_MODULE_DOCSTRING}}
+{%endif%}"#;
 
-    out
+    Ok(Tera::one_off(function_template, &local_ctx, false)?)
 }
 
 fn render_class_docs<R: Renderer>(
     class_docs: &ClassDocumentation,
     fully_qualified_name: &str,
     renderer: &R,
-) -> String {
-    let mut out = String::new();
+    ctx: &Context,
+) -> Result<String> {
+    let mut local_ctx = ctx.clone();
 
-    out.push_str(&renderer.render_front_matter(Some(fully_qualified_name)));
-    out.push('\n');
-    out.push('\n');
+    let front_matter = &renderer.render_front_matter(Some(fully_qualified_name));
+    local_ctx.insert("SNAKEDOWN_FRONT_MATTER", &front_matter);
 
-    if let Some(docstring) = &class_docs.docstring {
-        out.push_str(docstring);
-        out.push('\n');
+    if let Some(docstring) = class_docs.docstring.clone() {
+        local_ctx.insert("SNAKEDOWN_CLASS_DOCSTRING", docstring.trim());
     }
 
-    out
+    let function_template = r#"
+        {{ SNAKEDOWN_FRONT_MATTER }}
+{%if SNAKEDOWN_CLASS_DOCSTRING%}
+{{SNAKEDOWN_CLASS_DOCSTRING}}
+{%endif%}"#;
+
+    Ok(Tera::one_off(function_template, &local_ctx, false)?)
 }
 
 fn render_function_docs<R: Renderer>(
     fn_docs: &FunctionDocumentation,
     fully_qualified_name: &str,
     renderer: &R,
-) -> String {
-    let mut out = String::new();
+    ctx: &Context,
+) -> Result<String> {
+    let mut local_ctx = ctx.clone();
 
-    out.push_str(&renderer.render_front_matter(Some(fully_qualified_name)));
-
-    out.push('\n');
-    out.push('\n');
-    out.push_str(&fn_docs.name);
-    out.push('(');
-    out.push_str(&render_args(fn_docs.args.clone()));
-    out.push(')');
-    if let Some(return_annotation) = fn_docs.return_type.clone() {
-        out.push_str(&format!(" -> {}", render_expr(return_annotation)));
+    let front_matter = &renderer.render_front_matter(Some(fully_qualified_name));
+    local_ctx.insert("SNAKEDOWN_FRONT_MATTER", &front_matter);
+    local_ctx.insert("SNAKEDOWN_FUNCTION_NAME", &fn_docs.name);
+    local_ctx.insert(
+        "SNAKEDOWN_FUNCTION_ARGS",
+        &render_args(fn_docs.args.clone()),
+    );
+    if let Some(ret) = fn_docs.return_type.clone() {
+        local_ctx.insert("SNAKEDOWN_FUNCTION_RET", &render_expr(ret));
     }
 
     if let Some(docstring) = fn_docs.docstring.clone() {
-        out.push('\n');
-        out.push('\n');
-        out.push_str(docstring.trim());
+        local_ctx.insert("SNAKEDOWN_FUNCTION_DOCSTRING", docstring.trim());
     }
-    out.push('\n');
-    out
+
+    let function_template = r#"
+        {{ SNAKEDOWN_FRONT_MATTER }}
+
+{{ SNAKEDOWN_FUNCTION_NAME }}({{ SNAKEDOWN_FUNCTION_ARGS }}){% if SNAKEDOWN_FUNCTION_RET %} -> {{ SNAKEDOWN_FUNCTION_RET }}{%endif%}
+{%if SNAKEDOWN_FUNCTION_DOCSTRING%}
+{{SNAKEDOWN_FUNCTION_DOCSTRING}}
+{%endif%}"#;
+
+    Ok(Tera::one_off(function_template, &local_ctx, false)?)
 }
 
 #[cfg(test)]
@@ -152,6 +176,7 @@ mod test {
 
     use color_eyre::Result;
     use pretty_assertions::assert_eq;
+    use tera::Context;
 
     use crate::{
         parsing::{python::module::extract_module_documentation, python::utils::parse_python_str},
@@ -223,12 +248,14 @@ This is a module that is used to test snakedown.
     fn render_module_documentation() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
         let mod_documentation = extract_module_documentation(&parsed, false, false);
+        let ctx = Context::new();
 
         let rendered = render_module(
             &mod_documentation,
             String::from("snakedown.testing.test_module"),
             &MdRenderer::new(),
-        );
+            &ctx,
+        )?;
 
         assert_eq!(rendered, expected_module_docs_rendered());
 
@@ -248,12 +275,14 @@ This is a module that is used to test snakedown.
     fn render_module_documentation_zola() -> Result<()> {
         let parsed = parse_python_str(test_dirty_module_str())?;
         let mod_documentation = extract_module_documentation(&parsed, false, false);
+        let ctx = Context::new();
 
         let rendered = render_module(
             &mod_documentation,
             String::from("snakedown"),
             &ZolaRenderer::new(false),
-        );
+            &ctx,
+        )?;
 
         assert_eq!(rendered, expected_module_docs_zola_rendered());
 
