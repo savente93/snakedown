@@ -2,6 +2,9 @@
 foo.py
 
 Example module demonstrating a calculator.
+
+See Also:
+    [[test_pkg.bar]]
 """
 
 __all__ = ["add", "multiply"]
