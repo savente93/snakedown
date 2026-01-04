@@ -8,7 +8,7 @@ use walkdir::WalkDir;
 
 use color_eyre::eyre::{OptionExt, Result, eyre};
 
-use crate::indexing::index::Index;
+use crate::indexing::index::RawIndex;
 
 /// determines whether given path is a Python module
 /// i.e. a file with a .py extension
@@ -212,7 +212,7 @@ pub struct PackageIndex {
 }
 
 pub fn crawl_package(
-    index: &mut Index,
+    index: &mut RawIndex,
     pkg_path: &Path,
     skip_private: bool,
     exclude: Vec<PathBuf>,

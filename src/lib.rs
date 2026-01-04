@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use crate::fs::crawl_package;
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
-use crate::indexing::index::Index;
+use crate::indexing::index::RawIndex;
 use crate::render::formats::Renderer;
 pub use crate::render::render_module;
 use crate::render::render_object;
@@ -35,9 +35,7 @@ pub fn render_docs<R: Renderer>(
     ctx.insert("SNAKEDOWN_VERSION", &sd_version);
 
     tracing::info!("indexing package at {}", &absolute_pkg_path.display());
-    let mut index = Index::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
-
-    // TODO: don't hardcode paths
+    let mut index = RawIndex::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
 
     crawl_package(
         &mut index,
@@ -54,6 +52,8 @@ pub fn render_docs<R: Renderer>(
             errors
         )),
     }?;
+
+    index.pre_process(renderer)?;
 
     create_dir_all(out_path)?;
 
