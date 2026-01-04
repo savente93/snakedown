@@ -15,4 +15,4 @@ Example:
     True
 
 See Also:
-    [[test_pkg.sub1.sub2.one.is_odd]]
+    [test_pkg.sub1.sub2.one.is_odd](test_pkg.sub1.sub2.one.is_odd.md)

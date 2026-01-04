@@ -12,7 +12,20 @@ pub enum ObjectDocumentation {
 }
 
 impl ObjectDocumentation {
-    pub fn extract_used_references(&self) -> Vec<ObjectRef> {
+    pub fn docstring(&self) -> Option<String> {
+        match self {
+            ObjectDocumentation::Module(module_documentation) => {
+                module_documentation.docstring.clone()
+            }
+            ObjectDocumentation::Class(class_documentation) => {
+                class_documentation.docstring.clone()
+            }
+            ObjectDocumentation::Function(function_documentation) => {
+                function_documentation.docstring.clone()
+            }
+        }
+    }
+    pub fn extract_used_references(&self) -> Option<(String, Vec<ObjectRef>)> {
         match self {
             ObjectDocumentation::Module(module_documentation) => {
                 module_documentation.extract_used_references()
@@ -22,6 +35,20 @@ impl ObjectDocumentation {
             }
             ObjectDocumentation::Function(function_documentation) => {
                 function_documentation.extract_used_references()
+            }
+        }
+    }
+
+    pub(crate) fn replace_docstring(&mut self, object_docstring: Option<String>) {
+        match self {
+            ObjectDocumentation::Module(module_documentation) => {
+                module_documentation.docstring = object_docstring;
+            }
+            ObjectDocumentation::Class(class_documentation) => {
+                class_documentation.docstring = object_docstring;
+            }
+            ObjectDocumentation::Function(function_documentation) => {
+                function_documentation.docstring = object_docstring;
             }
         }
     }

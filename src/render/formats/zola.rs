@@ -1,24 +1,11 @@
-use std::path::PathBuf;
-
 use color_eyre::Result;
 use url::Url;
 
 use crate::render::formats::Renderer;
 
-pub struct ZolaRenderer {
-    use_shortcodes: bool,
-}
-impl Default for ZolaRenderer {
-    fn default() -> Self {
-        Self::new(false)
-    }
-}
+#[derive(Default)]
+pub struct ZolaRenderer {}
 
-impl ZolaRenderer {
-    pub fn new(use_shortcodes: bool) -> Self {
-        Self { use_shortcodes }
-    }
-}
 impl Renderer for ZolaRenderer {
     fn render_header(&self, content: &str, level: usize) -> String {
         format!("{} {}", &"#".repeat(level), content.trim())
@@ -34,26 +21,17 @@ impl Renderer for ZolaRenderer {
         out
     }
 
-    fn render_external_ref(&self, text: String, base_url: Url, rel_url: String) -> Result<String> {
-        let full_url = base_url.join(&rel_url)?;
-        if self.use_shortcodes {
-            Ok(format!(
-                r#"{{{{ snakedown_external_ref(text="{text}", url="{full_url}") }}}}"#
-            ))
+    fn render_reference(&self, display_text: Option<String>, target: String) -> Result<String> {
+        let t = if Url::parse(&target).is_ok() {
+            target
         } else {
-            Ok(format!("[{text}]({full_url})"))
-        }
-    }
-
-    fn render_internal_ref(&self, text: String, rel_path: PathBuf) -> Result<String> {
-        let path_display = rel_path.display();
-        if self.use_shortcodes {
-            Ok(format!(
-                r#"{{{{ snakedown_internal_ref(text="{text}", path="@/{path_display}") }}}}"#
-            ))
-        } else {
-            Ok(format!("[{text}](@/{path_display})"))
-        }
+            format!("@/{}.md", target)
+        };
+        let rendered = match display_text {
+            Some(text) => format!("[{text}]({t})"),
+            None => format!("[{t}]({t})"),
+        };
+        Ok(rendered)
     }
 }
 
@@ -66,7 +44,7 @@ mod test {
 
     #[test]
     fn test_zola_header() -> Result<()> {
-        let renderer = ZolaRenderer::new(false);
+        let renderer = ZolaRenderer {};
         let obj_name = String::from("foo.bar.nasty-names_with_underscores_and_emoji_🙈");
         assert_eq!(
             renderer.render_header(&obj_name, 2),
@@ -78,7 +56,7 @@ mod test {
     #[test]
     fn test_empty_zola_front_matter() -> Result<()> {
         assert_eq!(
-            ZolaRenderer::new(false).render_front_matter(None),
+            ZolaRenderer {}.render_front_matter(None),
             r"+++
 +++"
         );
@@ -88,8 +66,8 @@ mod test {
     #[test]
     fn zola_internal_link_no_shortcode() -> Result<()> {
         assert_eq!(
-            ZolaRenderer::new(false)
-                .render_internal_ref("Baz".to_string(), PathBuf::from("foo/bar/baz/index.md"))?,
+            ZolaRenderer {}
+                .render_reference(Some("Baz".to_string()), String::from("foo/bar/baz/index"))?,
             r#"[Baz](@/foo/bar/baz/index.md)"#
         );
         Ok(())
@@ -97,41 +75,19 @@ mod test {
     #[test]
     fn zola_external_link_no_shortcode() -> Result<()> {
         assert_eq!(
-            ZolaRenderer::new(false).render_external_ref(
-                "Dataset".to_string(),
-                Url::parse("https://docs.xarray.dev/en/stable/")?,
-                "generated/xarray.Dataset.html#xarray.Dataset".to_string()
+            ZolaRenderer {}.render_reference(
+                Some("Dataset".to_string()),
+                "https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html#xarray.Dataset"
+                    .to_string(),
             )?,
             r#"[Dataset](https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html#xarray.Dataset)"#
         );
         Ok(())
     }
     #[test]
-    fn zola_internal_link_with_shortcode() -> Result<()> {
-        assert_eq!(
-            ZolaRenderer::new(true)
-                .render_internal_ref("Baz".to_string(), PathBuf::from("foo/bar/baz/index.md"))?,
-            r#"{{ snakedown_internal_ref(text="Baz", path="@/foo/bar/baz/index.md") }}"#
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn zola_external_link_with_shortcode() -> Result<()> {
-        assert_eq!(
-            ZolaRenderer::new(true).render_external_ref(
-                "Dataset".to_string(),
-                Url::parse("https://docs.xarray.dev/en/stable/")?,
-                "generated/xarray.Dataset.html#xarray.Dataset".to_string()
-            )?,
-            r#"{{ snakedown_external_ref(text="Dataset", url="https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html#xarray.Dataset") }}"#
-        );
-        Ok(())
-    }
-    #[test]
     fn test_zola_front_matter_with_title() -> Result<()> {
         assert_eq!(
-            ZolaRenderer::new(false).render_front_matter(Some("foo")),
+            ZolaRenderer {}.render_front_matter(Some("foo")),
             r#"+++
 title = "foo"
 +++"#

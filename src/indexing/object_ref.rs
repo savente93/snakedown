@@ -1,16 +1,28 @@
 use lazy_regex::regex_captures_iter;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ObjectRef {
     pub fully_qualified_name: String,
     pub display_text: Option<String>,
 }
 
+// NOTE: only the index can render these things because
+// it knows things like paths and urls, therefore there is not render
+// fn on this impl
 impl ObjectRef {
     pub fn new(name: String, display: Option<String>) -> Self {
         Self {
             fully_qualified_name: name,
             display_text: display,
+        }
+    }
+
+    pub fn original(&self) -> String {
+        match &self.display_text {
+            None => {
+                format!("[[{}]]", self.fully_qualified_name)
+            }
+            Some(d) => format!("[[{}|{}]]", self.fully_qualified_name, d),
         }
     }
 }
