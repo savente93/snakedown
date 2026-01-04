@@ -1,11 +1,14 @@
-use crate::parsing::{
-    ObjectDocumentation,
-    python::{
-        class::ClassDocumentation,
-        function::FunctionDocumentation,
-        module::{ModuleDocumentation, extract_module_documentation},
-        utils::parse_python_file,
+use crate::{
+    parsing::{
+        ObjectDocumentation,
+        python::{
+            class::ClassDocumentation,
+            function::FunctionDocumentation,
+            module::{ModuleDocumentation, extract_module_documentation},
+            utils::parse_python_file,
+        },
     },
+    render::formats::Renderer,
 };
 use color_eyre::{Report, Result, eyre::eyre};
 use std::{
@@ -14,16 +17,17 @@ use std::{
 };
 use url::Url;
 
-// NOTE: I think the winning strategy here is to start with a `RawIndex` that is more or less the
+// TODO: I think the winning strategy here is to start with a `RawIndex` that is more or less the
 // current index struct, which refers to all the original python stuff on disk with all the type
 // info etc.
 // then we do something like `let serializable_index = index.process()?;` with something like
 // `RawIndex::process(self) -> SerializableIndex` which is a new object with everything
 // preprocessed, incl stripped prefixes, all references validated and expanded etc.
 // then later we can just write everything to disk separately. That's a nice separation of concerns
+// see also: https://github.com/savente93/snakedown/issues/57
 
 #[derive(Debug)]
-pub struct Index {
+pub struct RawIndex {
     pub pkg_name: String,
     pub internal_object_store: HashMap<String, ObjectDocumentation>,
     pub external_object_store: HashMap<String, Url>,
@@ -32,7 +36,7 @@ pub struct Index {
     pub pkg_root: PathBuf,
 }
 
-impl Index {
+impl RawIndex {
     pub fn new(pkg_root: PathBuf, skip_undoc: bool, skip_private: bool) -> Result<Self> {
         let pkg_name = pkg_root
             .file_stem()
@@ -106,19 +110,20 @@ impl Index {
     pub fn validate_references(&self) -> Result<(), Vec<Report>> {
         let mut errors: Vec<_> = Vec::new();
         for (key, obj) in self.internal_object_store.iter() {
-            let used_references = obj.extract_used_references();
-            for used_ref in used_references {
-                if !self
-                    .internal_object_store
-                    .contains_key(&used_ref.fully_qualified_name)
-                {
-                    errors.push(eyre!(
-                        "unknown reference: {}, in object {}",
-                        used_ref.fully_qualified_name,
-                        key
-                    ));
+            if let Some((_, used_references)) = obj.extract_used_references() {
+                for used_ref in used_references {
+                    if !self
+                        .internal_object_store
+                        .contains_key(&used_ref.fully_qualified_name)
+                    {
+                        errors.push(eyre!(
+                            "unknown reference: {}, in object {}",
+                            used_ref.fully_qualified_name,
+                            key
+                        ));
+                    }
                 }
-            }
+            };
         }
 
         if errors.is_empty() {
@@ -126,6 +131,30 @@ impl Index {
         } else {
             Err(errors)
         }
+    }
+
+    //TODO: This is not an efficient way to do this, but for the test cases it works,
+    //at some point we should find a more high performance solution.
+    // see: https://github.com/savente93/snakedown/issues/55
+    pub fn pre_process<R: Renderer>(&mut self, render: R) -> Result<()> {
+        for (_key, object) in self.internal_object_store.iter_mut() {
+            if let Some((mut object_docstring, used_references)) = object.extract_used_references()
+            {
+                for used_ref in used_references {
+                    let display_text = used_ref
+                        .clone()
+                        .display_text
+                        .or_else(|| Some(used_ref.fully_qualified_name.clone()));
+                    let expanded_ref = render
+                        .render_reference(display_text, used_ref.fully_qualified_name.clone())?;
+                    object_docstring =
+                        object_docstring.replace(&used_ref.original(), &expanded_ref);
+                }
+                object.replace_docstring(Some(object_docstring));
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -152,7 +181,7 @@ pub fn should_include_module(mod_docs: &ModuleDocumentation, skip_undoc: bool) -
 }
 
 pub fn index_functions(
-    index: &mut Index,
+    index: &mut RawIndex,
     func_docs: &FunctionDocumentation,
     prefix: String,
 ) -> Result<()> {
@@ -173,7 +202,7 @@ pub fn index_functions(
 }
 
 pub fn index_class(
-    index: &mut Index,
+    index: &mut RawIndex,
     class_docs: &ClassDocumentation,
     prefix: String,
 ) -> Result<()> {

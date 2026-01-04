@@ -23,11 +23,10 @@ impl ClassDocumentation {
                 .collect(),
         }
     }
-    pub fn extract_used_references(&self) -> Vec<ObjectRef> {
-        match &self.docstring {
-            Some(s) => extract_object_refs(s),
-            None => Vec::new(),
-        }
+    pub fn extract_used_references(&self) -> Option<(String, Vec<ObjectRef>)> {
+        self.docstring
+            .as_ref()
+            .map(|s| (s.clone(), extract_object_refs(s)))
     }
 }
 

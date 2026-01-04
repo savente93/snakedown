@@ -280,7 +280,7 @@ This is a module that is used to test snakedown.
         let rendered = render_module(
             &mod_documentation,
             String::from("snakedown"),
-            &ZolaRenderer::new(false),
+            &ZolaRenderer {},
             &ctx,
         )?;
 

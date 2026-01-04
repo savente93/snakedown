@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use color_eyre::Result;
 use url::Url;
 
@@ -25,24 +23,25 @@ impl Renderer for MdRenderer {
         }
     }
 
-    fn render_external_ref(&self, text: String, base_url: Url, rel_url: String) -> Result<String> {
-        let full_url = base_url.join(&rel_url)?;
-        Ok(format!("[{text}]({full_url})"))
-    }
-
-    fn render_internal_ref(&self, text: String, rel_path: PathBuf) -> Result<String> {
-        let display_path = rel_path.display();
-        Ok(format!("[{text}]({display_path})"))
+    fn render_reference(&self, display_text: Option<String>, target: String) -> Result<String> {
+        let t = if Url::parse(&target).is_ok() {
+            target
+        } else {
+            format!("{}.md", target)
+        };
+        let rendered = match display_text {
+            Some(text) => format!("[{text}]({t})"),
+            None => format!("[{t}]({t})"),
+        };
+        Ok(rendered)
     }
 }
 
 #[cfg(test)]
 mod test {
     use pretty_assertions::assert_eq;
-    use std::path::PathBuf;
 
     use color_eyre::Result;
-    use url::Url;
 
     use crate::render::formats::{Renderer, md::MdRenderer};
     #[test]
@@ -56,9 +55,8 @@ mod test {
     #[test]
     fn test_render_external_ref() -> Result<()> {
         let text = String::from("foo");
-        let base_url = Url::parse("https://example.com/docs/")?;
-        let rel_url = String::from("foo/bar/baz.html#Bullshit");
-        let out = MdRenderer::new().render_external_ref(text, base_url, rel_url)?;
+        let url = String::from("https://example.com/docs/foo/bar/baz.html#Bullshit");
+        let out = MdRenderer::new().render_reference(Some(text), url)?;
         assert_eq!(
             out,
             String::from("[foo](https://example.com/docs/foo/bar/baz.html#Bullshit)")
@@ -68,9 +66,9 @@ mod test {
     #[test]
     fn test_render_internal_ref() -> Result<()> {
         let text = String::from("foo");
-        let rel_path = PathBuf::from("foo/bar/index.md");
+        let rel_path = String::from("foo/bar/index");
 
-        let out = MdRenderer::new().render_internal_ref(text, rel_path)?;
+        let out = MdRenderer::new().render_reference(Some(text), rel_path)?;
         assert_eq!(out, String::from("[foo](foo/bar/index.md)"));
         Ok(())
     }

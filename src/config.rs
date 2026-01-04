@@ -153,11 +153,7 @@ impl ConfigBuilder {
     pub fn build(self) -> Result<Config> {
         let renderer: Box<dyn Renderer> = match self.ssg {
             Some(SSG::Markdown) | None => Box::new(MdRenderer::new()),
-            Some(SSG::Zola) => {
-                let render_config = self.render.unwrap_or_default();
-                let zola_config = render_config.zola.unwrap_or_default();
-                Box::new(ZolaRenderer::new(zola_config.use_shortcodes))
-            }
+            Some(SSG::Zola) => Box::new(ZolaRenderer {}),
         };
 
         let mut external_linkings = HashMap::new();
