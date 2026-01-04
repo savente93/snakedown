@@ -14,6 +14,14 @@ use std::{
 };
 use url::Url;
 
+// NOTE: I think the winning strategy here is to start with a `RawIndex` that is more or less the
+// current index struct, which refers to all the original python stuff on disk with all the type
+// info etc.
+// then we do something like `let serializable_index = index.process()?;` with something like
+// `RawIndex::process(self) -> SerializableIndex` which is a new object with everything
+// preprocessed, incl stripped prefixes, all references validated and expanded etc.
+// then later we can just write everything to disk separately. That's a nice separation of concerns
+
 #[derive(Debug)]
 pub struct Index {
     pub pkg_name: String,
