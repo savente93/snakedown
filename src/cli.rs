@@ -40,7 +40,8 @@ pub fn resolve_runtime_config(args: Args) -> Result<Config> {
     }
 
     let cli_args_builder = ConfigBuilder::default()
-        .with_output_dir(args.output_dir)
+        .with_api_content_path(args.api_content_path)
+        .with_site_root(args.site_root)
         .with_pkg_path(args.pkg_path)
         .with_skip_undoc(if args.skip_undoc { Some(true) } else { None })
         .with_skip_private(if args.skip_private { Some(true) } else { None })
@@ -75,8 +76,14 @@ pub struct Args {
     /// The path of the root of the package
     pub pkg_path: Option<PathBuf>,
 
-    /// The directory where to put the rendered docs
-    pub output_dir: Option<PathBuf>,
+    /// The root of the site. The output will be placed in a subfolder of the content folder in
+    /// this folder. `docs` by default
+    pub site_root: Option<PathBuf>,
+
+    /// The path to where the output should be placed relative to the site_root
+    /// output will specifically be placed in `./<site_root>/<api_content_path>/`
+    /// `api/` by default. If you want the output to be the site root set this to the empty string
+    pub api_content_path: Option<PathBuf>,
 
     /// The path to the configuration file
     #[arg(long, short)]
@@ -135,7 +142,8 @@ mod tests {
     fn test_args_defaults() -> Result<()> {
         let args = Args::parse_from(["snakedown"]);
         assert!(args.pkg_path.is_none());
-        assert!(args.output_dir.is_none());
+        assert!(args.site_root.is_none());
+        assert!(args.api_content_path.is_none());
         assert!(!args.skip_undoc);
         assert!(!args.skip_private);
         assert!(args.exclude.is_none());
@@ -149,6 +157,7 @@ mod tests {
             "snakedown",
             "src/pkg",
             "dist",
+            "section1/section2/api",
             "--skip-undoc",
             "--skip-private",
             "--exclude",
@@ -161,7 +170,11 @@ mod tests {
             "-v",
         ]);
         assert_eq!(args.pkg_path, Some(PathBuf::from("src/pkg")));
-        assert_eq!(args.output_dir, Some(PathBuf::from("dist")));
+        assert_eq!(args.site_root, Some(PathBuf::from("dist")));
+        assert_eq!(
+            args.api_content_path,
+            Some(PathBuf::from("section1/section2/api"))
+        );
         assert!(args.skip_undoc);
         assert!(args.skip_private);
         assert_eq!(
