@@ -13,8 +13,6 @@ _build/
 
 .vscode
 
-tests/zola_test_site/content/*
-
 .bacon-locations
 
-tests/zola_test_site/public
+**/public
