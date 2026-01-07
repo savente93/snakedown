@@ -20,14 +20,16 @@ use color_eyre::eyre::eyre;
 use tera::Context;
 
 pub fn render_docs<R: Renderer>(
+    site_root: &Path,
+    api_content_path: &Path,
     pkg_path: &Path,
-    out_path: &Path,
     skip_private: bool,
     skip_undoc: bool,
     exclude: Vec<PathBuf>,
     renderer: &R,
 ) -> Result<Vec<PathBuf>> {
     let absolute_pkg_path = pkg_path.canonicalize()?;
+    let out_path = site_root.join(api_content_path);
     let errored = vec![];
 
     let mut ctx = Context::new();
@@ -53,9 +55,9 @@ pub fn render_docs<R: Renderer>(
         )),
     }?;
 
-    index.pre_process(renderer)?;
+    index.pre_process(renderer, api_content_path)?;
 
-    create_dir_all(out_path)?;
+    create_dir_all(&out_path)?;
 
     for (key, object) in index.internal_object_store.iter() {
         let file_path = out_path.join(key).with_added_extension("md");
@@ -112,11 +114,11 @@ mod test {
         in_both.sort();
 
         for path in only_in_expected {
-            errors.push(format!("Only in {expected:?}(expected): {path:?}"));
+            errors.push(format!("Only in {expected:?} (expected): {path:?}"));
         }
 
         for path in only_in_actual {
-            errors.push(format!("Only in {actual:?}(actual): {path:?}"));
+            errors.push(format!("Only in {actual:?} (actual): {path:?}"));
         }
 
         for path in in_both {
@@ -187,10 +189,12 @@ mod test {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_full");
+        let api_content_path = PathBuf::from("");
 
         render_docs(
-            &test_pkg_dir,
             temp_dir.path(),
+            &api_content_path,
+            &test_pkg_dir,
             false,
             false,
             vec![
@@ -209,10 +213,12 @@ mod test {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_no_private");
+        let api_content_path = PathBuf::from("");
 
         render_docs(
-            &test_pkg_dir,
             temp_dir.path(),
+            &api_content_path,
+            &test_pkg_dir,
             true,
             true,
             vec![
@@ -230,9 +236,11 @@ mod test {
     fn render_test_pkg_docs_exit_on_err() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
+        let api_content_path = PathBuf::from("api/");
 
         render_docs(
             &test_pkg_dir,
+            &api_content_path,
             temp_dir.path(),
             false,
             false,
