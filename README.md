@@ -35,19 +35,29 @@ Currently, SnakeDown is solidly in the MVP state. While I am quite happy with it
 
 
 ## Loose Roadmap:
+(subject to change)
 
 - [x] Walk file tree to find python objects
 - [x] Parse them to extract documentation
 - [x] Dump documentation in similar file structure to original package
 - [x] Fill out the CLI
-- [ ] Test output in SSGs (zola, hugo for now, please submit a feature request if you want others included)
+- [ ] Test output in SSGs (please submit a feature request if you want others included):
+    - [x] plain markdown
+    - [x] zola
+    - [ ] hugo
 - [x] Logging at appropriate levels
 - [ ] Parse/render docstring formats like numpy and google so we can render them better
-- [ ] Configuration file
-- [ ] Support multiple formats? (md, rst)
-- [ ] Do reference linking inside the docs
-- [ ] Do reference linking to external docs
+- [x] Configuration file
+- [x] Do reference linking inside the docs
+- [x] Do reference linking to external docs
 - [ ] Benchmarking & optimisation
+- [ ] QoL features like:
+    - [ ] a file watcher
+    - [ ] `snakedown init` to setup `snakedown.toml` etc.
+    - [ ] `snakedown doctor` to help diagnose problems
+    - [ ] fuzzy search to suggest close references in case of typos
+    - [ ] A `view on <SCM>` button
+    - [ ] possibly bibtex integration for pandoc style citations
 
 ## FAQ
 
@@ -80,20 +90,6 @@ Three main reasons:
 
 Not yet, but I suspect they will.
 
-
-## Dev tools
-To develop SnakeDown you'll want to have these tools installed:
-
-- [`just`](https://github.com/casey/just) A command runner to run (and document) workflows we run, including installing dev and publish dependencies
-- [`typos-cli`](https://github.com/crate-ci/typos) Fixing typos... not that we make any... but you know, just in case.
-- [`taplo-cli`](https://github.com/tamasfe/taplo) Keeping our `.toml` files nice and clean
-- [`bacon`](https://github.com/Canop/bacon) A runner that will watch your files and run checks, tests, linting etc. when they change. Very useful while developing
-
-##  Publishing Tools
-If you have to publish, or otherwise fiddle with dependencies of SnakeDown you'll want these installed as well:
-- [`cargo-semver`](https://github.com/obi1kenobi/cargo-semver-checks) A cargo plugin to check that we haven't accidentally broken our API when we didn't mean to.
-- [`cargo-edit`](https://github.com/killercup/cargo-edit) A cargo plugin for managing dependencies, incl updating them.
-- [`git-cliff`](https://github.com/orhun/git-cliff) A neat tool to generate our changelog
 
 ## Template
 
