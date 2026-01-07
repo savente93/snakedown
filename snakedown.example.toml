@@ -1,4 +1,5 @@
-output_dir = "_build"
+api_content_path = "api/"
+site_root = "docs"
 pkg_path = "."
 skip_undoc = true
 skip_private = false

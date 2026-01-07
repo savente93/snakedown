@@ -20,7 +20,8 @@ pub struct ExternalIndex {
 }
 
 pub struct Config {
-    pub output_dir: PathBuf,
+    pub site_root: PathBuf,
+    pub api_content_path: PathBuf,
     pub pkg_path: PathBuf,
     pub skip_undoc: bool,
     pub skip_private: bool,
@@ -41,7 +42,8 @@ pub struct ZolaConfig {
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Eq, Debug)]
 pub struct ConfigBuilder {
-    output_dir: Option<PathBuf>,
+    site_root: Option<PathBuf>,
+    api_content_path: Option<PathBuf>,
     pkg_path: Option<PathBuf>,
     skip_undoc: Option<bool>,
     skip_private: Option<bool>,
@@ -62,7 +64,8 @@ impl ConfigBuilder {
             },
         );
         self = self
-            .with_output_dir(Some(PathBuf::from("_build")))
+            .with_site_root(Some(PathBuf::from("docs")))
+            .with_api_content_path(Some(PathBuf::from("api/")))
             .with_skip_undoc(Some(true))
             .with_skip_private(Some(false))
             .with_pkg_path(Some(PathBuf::from(".")))
@@ -83,9 +86,15 @@ impl ConfigBuilder {
         }
         self
     }
-    pub fn with_output_dir(mut self, output_dir: Option<PathBuf>) -> Self {
-        if output_dir.is_some() {
-            self.output_dir = output_dir;
+    pub fn with_api_content_path(mut self, api_content_path: Option<PathBuf>) -> Self {
+        if api_content_path.is_some() {
+            self.api_content_path = api_content_path;
+        }
+        self
+    }
+    pub fn with_site_root(mut self, site_root: Option<PathBuf>) -> Self {
+        if site_root.is_some() {
+            self.site_root = site_root;
         }
         self
     }
@@ -170,7 +179,8 @@ impl ConfigBuilder {
         }
 
         Ok(Config {
-            output_dir: self.output_dir.unwrap_or(PathBuf::from("_build")),
+            api_content_path: self.api_content_path.unwrap_or(PathBuf::from("api/")),
+            site_root: self.site_root.unwrap_or(PathBuf::from("docs")),
             pkg_path: self.pkg_path.unwrap_or(PathBuf::from(".")),
             skip_undoc: self.skip_undoc.unwrap_or(true),
             skip_private: self.skip_private.unwrap_or(false),
@@ -188,8 +198,12 @@ impl ConfigBuilder {
     }
 
     pub fn merge(mut self, other: ConfigBuilder) -> Self {
-        if other.output_dir.is_some() {
-            self.output_dir = other.output_dir;
+        if other.site_root.is_some() {
+            self.site_root = other.site_root;
+        }
+
+        if other.api_content_path.is_some() {
+            self.api_content_path = other.api_content_path;
         }
 
         if other.pkg_path.is_some() {
@@ -273,19 +287,22 @@ mod test {
 
         let second = ConfigBuilder::default()
             .with_pkg_path(Some(PathBuf::from("content")))
+            .with_api_content_path(Some(PathBuf::from("bar/baz/apis")))
             .with_skip_undoc(Some(true))
             .with_exclude(Some(vec![PathBuf::from("zxcv")]));
 
         let third = ConfigBuilder::default()
-            .with_output_dir(Some(PathBuf::from("_output")))
+            .with_site_root(Some(PathBuf::from("_output")))
+            .with_api_content_path(Some(PathBuf::from("foo/bar/apis")))
             .with_skip_private(Some(false))
             .with_pkg_path(Some(PathBuf::from("pkg")))
             .with_exclude(Some(vec![PathBuf::from("qwert")]))
             .with_ssg(Some(SSG::Zola));
 
         let mut expected = ConfigBuilder::default()
+            .with_site_root(Some(PathBuf::from("_output")))
             .with_pkg_path(Some(PathBuf::from("pkg")))
-            .with_output_dir(Some(PathBuf::from("_output")))
+            .with_api_content_path(Some(PathBuf::from("foo/bar/apis")))
             .with_skip_undoc(Some(true))
             .with_skip_undoc(Some(true))
             .with_skip_private(Some(false))

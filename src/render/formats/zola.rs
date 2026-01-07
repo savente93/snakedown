@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use color_eyre::Result;
 use url::Url;
 
@@ -21,11 +23,23 @@ impl Renderer for ZolaRenderer {
         out
     }
 
-    fn render_reference(&self, display_text: Option<String>, target: String) -> Result<String> {
+    fn render_reference(
+        &self,
+        display_text: Option<String>,
+        target_prefix: &Path,
+        target: String,
+    ) -> Result<String> {
         let t = if Url::parse(&target).is_ok() {
             target
         } else {
-            format!("@/{}.md", target)
+            format!(
+                "{}",
+                PathBuf::from("@")
+                    .join(target_prefix)
+                    .join(target)
+                    .with_added_extension("md")
+                    .display()
+            )
         };
         let rendered = match display_text {
             Some(text) => format!("[{text}]({t})"),
@@ -66,8 +80,11 @@ mod test {
     #[test]
     fn zola_internal_link_no_shortcode() -> Result<()> {
         assert_eq!(
-            ZolaRenderer {}
-                .render_reference(Some("Baz".to_string()), String::from("foo/bar/baz/index"))?,
+            ZolaRenderer {}.render_reference(
+                Some("Baz".to_string()),
+                &PathBuf::from(""),
+                String::from("foo/bar/baz/index")
+            )?,
             r#"[Baz](@/foo/bar/baz/index.md)"#
         );
         Ok(())
@@ -77,6 +94,7 @@ mod test {
         assert_eq!(
             ZolaRenderer {}.render_reference(
                 Some("Dataset".to_string()),
+                &PathBuf::from(""),
                 "https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html#xarray.Dataset"
                     .to_string(),
             )?,

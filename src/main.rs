@@ -33,9 +33,11 @@ async fn main() -> Result<()> {
         )
         .await?;
     }
+
     render_docs(
+        &config.site_root,
+        &config.api_content_path,
         &config.pkg_path,
-        &config.output_dir,
         config.skip_private,
         config.skip_undoc,
         config.exclude,

@@ -136,7 +136,7 @@ impl RawIndex {
     //TODO: This is not an efficient way to do this, but for the test cases it works,
     //at some point we should find a more high performance solution.
     // see: https://github.com/savente93/snakedown/issues/55
-    pub fn pre_process<R: Renderer>(&mut self, render: R) -> Result<()> {
+    pub fn pre_process<R: Renderer>(&mut self, render: R, site_rel_api_path: &Path) -> Result<()> {
         for (_key, object) in self.internal_object_store.iter_mut() {
             if let Some((mut object_docstring, used_references)) = object.extract_used_references()
             {
@@ -145,8 +145,11 @@ impl RawIndex {
                         .clone()
                         .display_text
                         .or_else(|| Some(used_ref.fully_qualified_name.clone()));
-                    let expanded_ref = render
-                        .render_reference(display_text, used_ref.fully_qualified_name.clone())?;
+                    let expanded_ref = render.render_reference(
+                        display_text,
+                        site_rel_api_path,
+                        used_ref.fully_qualified_name.clone(),
+                    )?;
                     object_docstring =
                         object_docstring.replace(&used_ref.original(), &expanded_ref);
                 }

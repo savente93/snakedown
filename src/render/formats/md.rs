@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use color_eyre::Result;
 use url::Url;
 
@@ -23,7 +25,12 @@ impl Renderer for MdRenderer {
         }
     }
 
-    fn render_reference(&self, display_text: Option<String>, target: String) -> Result<String> {
+    fn render_reference(
+        &self,
+        display_text: Option<String>,
+        _target_prefix: &Path,
+        target: String,
+    ) -> Result<String> {
         let t = if Url::parse(&target).is_ok() {
             target
         } else {
@@ -39,6 +46,8 @@ impl Renderer for MdRenderer {
 
 #[cfg(test)]
 mod test {
+    use std::path::PathBuf;
+
     use pretty_assertions::assert_eq;
 
     use color_eyre::Result;
@@ -56,7 +65,7 @@ mod test {
     fn test_render_external_ref() -> Result<()> {
         let text = String::from("foo");
         let url = String::from("https://example.com/docs/foo/bar/baz.html#Bullshit");
-        let out = MdRenderer::new().render_reference(Some(text), url)?;
+        let out = MdRenderer::new().render_reference(Some(text), &PathBuf::from(""), url)?;
         assert_eq!(
             out,
             String::from("[foo](https://example.com/docs/foo/bar/baz.html#Bullshit)")
@@ -68,7 +77,7 @@ mod test {
         let text = String::from("foo");
         let rel_path = String::from("foo/bar/index");
 
-        let out = MdRenderer::new().render_reference(Some(text), rel_path)?;
+        let out = MdRenderer::new().render_reference(Some(text), &PathBuf::from(""), rel_path)?;
         assert_eq!(out, String::from("[foo](foo/bar/index.md)"));
         Ok(())
     }
