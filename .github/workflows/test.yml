@@ -17,7 +17,7 @@ name: test
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: ubuntu
+    name: test
     steps:
       - uses: actions/checkout@v6
         with:
@@ -41,6 +41,29 @@ jobs:
       # https://github.com/rust-lang/cargo/issues/6669
       - name: cargo test --doc
         run: cargo test --locked --all-features --doc
+  docs:
+    runs-on: ubuntu-latest
+    name: book
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Install rust stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Install mdbook
+        run: |
+          #download pre-compiled binary instead of compiling it ourselves every time
+          gh release download -R rust-lang/mdbook --clobber -p "*unknown-linux-gnu*"
+          tar xzf "mdbook*"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: build docs
+        run: |
+          mdbook build docs && mdbook test docs
   coverage:
     # use llvm-cov to build and collect coverage and outputs in a format that
     # is compatible with codecov.io
