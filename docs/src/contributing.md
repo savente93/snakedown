@@ -23,7 +23,7 @@ When you do so please include the version you were using as well good descriptio
 of what you were doing that may have triggered the error and what
 you expect to happen instead (unless it is trivial for example when you are reporting a crash)
 
-In general if your feature request is well written and complete it vastly increaces the chances it will be picked up soon. In general we don't ask for information for no reason, so if you omit things that may slow things down.
+In general if your bug report is well written and complete it vastly increaces the chances it will be picked up soon. In general we don't ask for information for no reason, so if you omit things that may slow things down.
 
 
 ## Pull Requests
@@ -91,7 +91,7 @@ For code organization, we recommend
 
 ### Dev tips
 
-You are not required to have the following tools installed to work on snakedown, but they can make thins a lot easier:
+You are not required to have the following tools installed to work on snakedown, but they can make things a lot easier:
 
 - [`just`](https://github.com/casey/just) A command runner to run (and document) workflows we run, including installing dev and publish dependencies.
 - [`pre-commit`](https://pre-commit.com) This will run lints when you try to commit so you don't fail CI tasks unnecessarily.

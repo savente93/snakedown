@@ -16,3 +16,4 @@ _build/
 .bacon-locations
 
 **/public
+docs/book
