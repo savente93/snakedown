@@ -41,7 +41,7 @@ the above python code into it.
 
 the folder structure of your new directory should look like this:
 
-```
+```ignore
 ❯ eza --tree -L 2 --git-ignore -A pkg
 pkg
 ├── docs
@@ -69,7 +69,7 @@ zola init
 
 after this the structure of your project should look like this:
 
-```
+```ignore
 ❯ eza --tree -L 2 --git-ignore -A pkg
 pkg
 ├── docs
@@ -117,7 +117,7 @@ snakedown
 
 Now you should see files being created:
 
-```bash
+```ignore
 ❯ eza --tree -L 4 --git-ignore -A
 .
 ├── docs
@@ -147,7 +147,7 @@ snakedown pkg docs tmp
 
 after which it should look like this:
 
-```bash
+```ignore
 ❯ eza --tree -L 4 --git-ignore -A
 .
 ├── docs
