@@ -38,9 +38,12 @@ build-release:
 
 doc:
     cargo doc --no-deps --all-features --workspace
+    mdbook build docs
+    mdbook test docs
 
 open-doc:
     cargo doc --no-deps --all-features --workspace --open
+    mdbook build docs --serve
 
 cov:
     cargo llvm-cov --locked --all-features  --open
@@ -56,17 +59,8 @@ newest:
 semver:
     cargo semver-checks
 
-install-dev-tools:
-    cargo install cargo-binstall
-    cargo binstall cargo-semver -y
-    cargo binstall cargo-edit -y
-    cargo binstall git-cliff -y
-    cargo binstall typos-cli -y
-    cargo binstall taplo-cli -y
-    cargo binstall bacon -y
-
 # Run all quality checks: fmt, lint, check, test
-ci: lint test
+ci: lint test doc
 
 # bit hacky but this should at least work across shells
 # checks if there is a pr open from the current branch and if not opens one for you
