@@ -1,0 +1,403 @@
+# This pyproject was taken from https://github.com/Deltares/hydromt
+# and is only here for the purposes of testing the parsing
+[build-system]
+requires = ["flit_core >=3.4.0,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "hydromt"
+authors = [
+	{ name = "Dirk Eilander", email = "dirk.eilander@deltares.nl" },
+	{ name = "Hélène Boisgontier", email = "helene.boisgontier@deltares.nl" },
+	{ name = "Sam Vente", email = "sam.vente@deltares.nl" },
+]
+dependencies = [
+	"affine",                 # Spatial rasterers affine transformations (bbox pixel coalision)
+	"bottleneck",             # Spearmen rank computation
+	"click",                  # CLI configuration
+	"dask",                   # lazy computing
+	"fsspec[http]",           # general file systems utilities
+	"geopandas[all]>=0.10",   # pandas but geo, wraps fiona and shapely
+	"importlib_metadata",     # entrypoints backport
+	"mercantile",             # tile handling
+	"netcdf4",                # netcfd IO
+	"numba",                  # speed up computations (used in e.g. stats)
+	"numpy",                  # pin necessary to ensure compatibility with C headers
+	"packaging",              # compare versions of hydromt
+	"pandas",                 # Dataframes
+	"pooch",                  # data fetching
+	"pyarrow",
+	"pydantic~=2.4",          # Validation
+	"pydantic-settings~=2.2", # Settings Management
+	"pyflwdir>=0.5.4",        # Height models and derivatives
+	"pyogrio>=0.6",           # io for geopandas dataframes
+	"pyproj",                 # projections for Coordinate reference systems
+	"pystac",                 # STAC integration
+	"pyyaml",                 # yaml interface
+	"rasterio",               # raster wrapper around gdal
+	"requests",               # download stuff
+	"rioxarray",              # wraps rasterio and xarray. Almost superseded by hydromt/raster.py
+	"scipy",                  # scientific utilities
+	"shapely>=2.1.0",         # geometry transforms
+	"tomli",                  # parsing toml files
+	"tomli-w",                # writing toml files
+	"universal_pathlib>=0.2", # provides path compatibility between different filesystems
+	"xarray",                 # ndim data arrays
+	"xmltodict",              # xml parser also used to read VRT
+	"xugrid>=0.9.0",          # xarray wrapper for mesh processing
+	"zarr>=3.1,<4",           # zarr
+]
+
+requires-python = ">=3.11"
+readme = "README.rst"
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+	"Topic :: Scientific/Engineering :: Hydrology",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+]
+dynamic = ['version', 'description']
+
+[project.optional-dependencies]
+io = [
+	"gcsfs>=2023.12.1", # google cloud file system
+	"fastparquet",      # parquet IO
+	"openpyxl",         # excel IO
+	"pillow",           # image IO
+	"s3fs",             # S3 file system
+]
+vrt = [
+	"gdal>=3.5.0", # vrt for caching of mosaic raster
+]
+extra = [
+	"matplotlib", # plotting; required for slippy tiles
+	"pyet",       # calc evapotranspiration, quite well used, used in all wflow models but domain specific
+]
+dev = [
+	"flit",            # needed to publish to pypi
+	"mypy",            # static type checking
+	"pandas-stubs",    # type hints for pandas
+	"pre-commit",      # linting
+	"ruff",            # linting
+	"twine",           # needed to publish to pypi
+	"types-openpyxl",  # type hints for openpyxl
+	"types-PyYAML",    # type hints for pyyaml
+	"types-Pillow",    # type hints for pillow
+	"types-requests",  # type hints for requests
+	"types-xmltodict", # type hints for xmltodict
+]
+test = [
+	"pytest>=8",      # testing framework
+	"pytest-cov",     # test coverage
+	"pytest-mock",    # mocking
+	"pytest-timeout", # darn hanging tests
+]
+doc = [
+	"hydromt[examples,extra]",      # examples are included in the docs
+	"nbsphinx",                     # build notebooks in docs
+	"pydata-sphinx-theme>=0.15.2",  # theme
+	"sphinx_autosummary_accessors", # doc layout
+	"sphinx",                       # build docks
+	"sphinx_design",                # doc layout
+	"sphinx-click",                 # click integration
+	"sbom4python",                  # generate software bill of materials
+	"autodoc_pydantic",             # pydantic autodoc
+]
+examples = [
+	"cartopy",    # plotting examples
+	"jupyterlab", # run examples in jupyter notebook
+	"notebook",   # jupyter integration
+]
+slim = ["hydromt[io,extra,examples]"]
+
+[project.urls]
+Documentation = "https://deltares.github.io/hydromt"
+Source = "https://github.com/Deltares/hydromt"
+
+[project.scripts]
+hydromt = "hydromt.cli.main:main"
+
+[project.entry-points."hydromt.components"]
+core = "hydromt.model.components"
+
+[project.entry-points."hydromt.drivers"]
+core = "hydromt.data_catalog.drivers"
+
+[project.entry-points."hydromt.models"]
+core = "hydromt.model"
+
+[project.entry-points."hydromt.catalogs"]
+core = "hydromt.data_catalog.predefined_catalog"
+
+[project.entry-points."hydromt.uri_resolvers"]
+core = "hydromt.data_catalog.uri_resolvers"
+
+[tool.snakedown]
+
+api_content_path = "foo/"
+site_root = "bar"
+pkg_path = "hydromt"
+skip_undoc = true
+skip_private = false
+ssg = "Zola"
+exclude = []
+
+[tool.snakedown.externals]
+builtins = {name = "Python", url = "https://docs.python.org/3/"}
+
+[tool.snakedown.render.zola]
+use_shortcodes = true
+
+[tool.setuptools.dynamic]
+description = { file = "hydromt/__init__.py" }
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = ["docs", "hydromt/model/__init__.py"]
+
+[tool.ruff.lint]
+# enable pydocstyle (E), pyflake (F) and isort (I), pytest-style (PT), bugbear (B)
+select = ["E", "F", "I", "PT", "D", "B", "ICN", "TID"]
+ignore = ["D211", "D213", "D206", "E501", "E741", "D105", "E712", "B904"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D100", "D101", "D102", "D103", "D104"]
+"hydromt/__init__.py" = ["E402", "F401", "F403"]
+"hydromt/models/__init__.py" = ["F401"]
+"hydromt/_compat.py" = ["F401"]
+"tests/conftest.py" = ["E402"]
+"examples/**" = ["B018", "D103"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.flit.sdist]
+include = ["hydromt"]
+exclude = ["docs", "examples", "envs", "tests", "binder", ".github"]
+
+[tool.pytest.ini_options]
+addopts = ["--ff", "-m", "not manual"]
+testpaths = ["tests"]
+markers = [
+	"integration: marks tests as being integration tests",
+	"manual: marks tests as manual, to be run before release",
+]
+
+filterwarnings = [
+	"error",
+	"ignore:numpy.ndarray size changed:RuntimeWarning",
+	# "ignore::rasterio.errors.NotGeoreferencedWarning",                              # upstream issue with rasterio, see https://github.com/rasterio/rasterio/issues/2497
+	"ignore:Detected a customized `__new__` method in subclass:DeprecationWarning", #upstream error in universal_pathlib see https://github.com/fsspec/universal_pathlib?tab=readme-ov-file#migrating-to-v020
+	"ignore::ResourceWarning",                                                      # upstream issue with aoihttp, can remove once aoihttp 4.0 is stable: https://github.com/aio-libs/aiohttp/issues/5426
+	"ignore::pytest.PytestUnraisableExceptionWarning",                              # combine with the above: https://github.com/pytest-dev/pytest/issues/9825
+	'ignore:pathlib\.Path\.__enter__:DeprecationWarning',                           # xugrid in python 3.11
+	#   "ignore:Implicit None on return values is deprecated and will raise KeyErrors:DeprecationWarning"
+	"ignore:__array_wrap__ must accept context and return_scalar arguments \\(positionally\\) in the future:DeprecationWarning",
+	'ignore:Python 3.14 will, by default, filter extracted tar archives:DeprecationWarning',                                     # pooch tarfile in python 3.12
+	"ignore:'mode' parameter is deprecated and will be removed in Pillow 13:DeprecationWarning",                                 # Pillow 13
+
+	# numpy itself silences these
+	# https://github.com/numpy/numpy/blob/46268caa719db95ab2198bcd619f0e3120d7c52e/numpy/__init__.py#L704-L707
+	"ignore:numpy.ndarray size changed:RuntimeWarning",
+
+	# zarr v3 experimental warning
+	"ignore:Consolidated metadata is currently not part in the Zarr format 3 specification:UserWarning",
+	# irrelevant radolan engine warning
+	"ignore:Engine 'radolan' loading failed.*:RuntimeWarning",
+]
+
+[tool.mypy]
+# TODO: Re-enable the tests
+exclude = ["docs/.*", "tests/.*"]
+plugins = ["pydantic.mypy", "numpy.typing.mypy_plugin"]
+python_version = "3.11"
+ignore_missing_imports = true
+
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+extra_checks = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.pypi-dependencies]
+hydromt = { path = ".", editable = true }
+
+[tool.pixi.feature.doc.dependencies]
+pandoc = "*"
+
+[tool.pixi.feature.io.dependencies]
+pyflwdir = ">=0.5.4"
+
+[tool.pixi.feature.vrt.dependencies]
+gdal = ">=3.5.0"
+
+[tool.pixi.feature.doc.tasks]
+doctest = { cmd = [
+	"sphinx-build",
+	"-M",
+	"doctest",
+	"docs",
+	"docs/_build",
+	"-W",
+] }
+docs-build = { cmd = [
+	"sphinx-build",
+	"-M",
+	"html",
+	"docs",
+	"docs/_build",
+	"-W",
+], depends-on = [
+	"doctest",
+] }
+docs-build-notest = { cmd = [
+	"sphinx-build",
+	"-M",
+	"html",
+	"docs",
+	"docs/_build",
+] }
+docs = { depends-on = ["docs-build"] } # alias
+doc = { depends-on = ["docs-build"] } # alias
+serve = { cmd = ["python", "-m", "http.server", "-d", "docs/_build/html"] }
+generate-sbom = { cmd = [
+	"sbom4python",
+	"--module",
+	"hydromt",
+	"--output-file",
+	"hydromt-core-sbom.json",
+	"--sbom",
+	"spdx",
+	"--format",
+	"json",
+] }
+
+[tool.pixi.feature.test.tasks]
+test = { cmd = ["pytest"] }
+test-lf = { cmd = ["pytest", "--lf", "--tb=short"] }
+test-err-warn = { cmd = ["pytest", "--tb=short", "-W", "error"] }
+test-cov = { cmd = [
+	"pytest",
+	"--verbose",
+	"--cov=hydromt",
+	"--cov-report=xml",
+	"--cov-branch",
+] }
+
+[tool.pixi.feature.dev.tasks]
+install = { depends-on = ["install-pre-commit"] }
+install-pre-commit = "pre-commit install"
+lint = { cmd = ["pre-commit", "run", "--all"] }
+mypy = "mypy ."
+
+pypi = { depends-on = [
+	"pypi-git-clean",
+	"pypi-git-restore",
+	"pypi-flit-build",
+	"pypi-twine",
+] }
+pypi-git-clean = { cmd = ["git", "clean", "-xdf"] }
+pypi-git-restore = { cmd = ["git", "restore", "-SW", "."] }
+pypi-flit-build = { cmd = ["flit", "build"] }
+pypi-twine = { cmd = ["python", "-m", "twine", "check", "dist/*"] }
+
+# clean
+clean = { depends-on = [
+	"clean-dist",
+	"clean-docs-generated",
+	"clean-docs-build",
+	"clean-docs-examples",
+] }
+clean-dist = { cmd = ["rm", "-rf", "dist"] }
+clean-docs-generated = { cmd = ["rm", "-rf", "docs/_generated"] }
+clean-docs-build = { cmd = ["rm", "-rf", "docs/_build"] }
+clean-docs-examples = { cmd = ["rm", "-rf", "docs/examples"] }
+
+[tool.pixi.environments]
+default = { features = [
+	"py311",
+	"io",
+	"vrt",
+	"extra",
+	"dev",
+	"test",
+	"doc",
+	"examples",
+], solve-group = "py311" }
+
+full-latest = { features = [
+	"py313",
+	"io",
+	"vrt",
+	"extra",
+	"dev",
+	"test",
+	"doc",
+	"examples",
+], solve-group = "py313" }
+min-latest = { features = ["py313", "test"], solve-group = "py313" }
+slim-latest = { features = [
+	"py313",
+	"io",
+	"vrt",
+	"extra",
+	"examples",
+], solve-group = "py313" }
+
+full-py313 = { features = [
+	"py313",
+	"io",
+	"vrt",
+	"extra",
+	"dev",
+	"test",
+	"doc",
+	"examples",
+], solve-group = "py313" }
+min-py313 = { features = ["py313", "test"], solve-group = "py313" }
+
+full-py312 = { features = [
+	"py312",
+	"io",
+	"vrt",
+	"extra",
+	"dev",
+	"test",
+	"doc",
+	"examples",
+], solve-group = "py312" }
+min-py312 = { features = ["py312", "test"], solve-group = "py312" }
+
+full-py311 = { features = [
+	"py311",
+	"io",
+	"vrt",
+	"extra",
+	"dev",
+	"test",
+	"doc",
+	"examples",
+], solve-group = "py311" }
+min-py311 = { features = ["py311", "test"], solve-group = "py311" }
