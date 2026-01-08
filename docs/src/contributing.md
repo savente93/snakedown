@@ -62,24 +62,13 @@ We request that the commit history gets cleaned up so that that commits are atom
 PRs should tell a cohesive story, with refactor and test commits that keep the
 fix or feature commits simple and clear.
 
-
-Specifically, we would encourage
-- File renames be isolated into their own commit
-- Add tests in a commit before their feature or fix, showing the current behavior (i.e. they should pass).
-  The diff for the feature/fix commit will then show how the behavior changed,
-  making the commit's intent clearer to reviewers and the community, and showing people that the
-  test is verifying the expected state.
-  - e.g. [clap#5520](https://github.com/clap-rs/clap/pull/5520)
-
 We understand having a clean history requires more advanced git skills;
-feel free to ask us for help!
+feel free to ask us for help! We might even suggest where it would work to be lax.
 
-We might even suggest where it would work to be lax.
-We also understand that editing some early commits may cause a lot of churn
-with merge conflicts which can make it not worth editing all of the history.
+We also understand that editing some early commits may cause a lot of churn with merge conflicts which can make it not worth editing all of the history. One way to do this is to just keep one big temporary commit (or a bunch of temporary commits) while you prototype until things are the way you want them to be, soft reset all the commits (or move all changes to a new branch) and then re-commit things in atomic commits one by one. This also gives you a good opportunity to do a self review!
 
 #### Coverage
-Coverage in Rust can be a bit fineky at times, and additionally coverage doesn't always tell the whole story, so we usually don't enforce hard limits on coverage. That being said, we do like to keep our coverage high, so if you don't cover something, please have good explanation as to why!
+Coverage in Rust can be a bit fineky at times, and additionally coverage doesn't always tell the whole story, so we usually don't enforce hard limits on coverage. For example llvm-cov marking a file that only contains a `)?` when returning a `Result` that will (almost) never error is not uncommon. We don't think there's much value in enforcing that these lines be covered, so if you miss those for example, that's okay. That being said, we do like to keep our coverage high, so if you don't cover something, please have good explanation as to why!
 
 #### Organisation
 
