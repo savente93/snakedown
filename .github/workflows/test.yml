@@ -17,7 +17,7 @@ name: test
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: test
+    name: test-suite
     steps:
       - uses: actions/checkout@v6
         with:
@@ -52,18 +52,16 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-
       - name: Install mdbook
         run: |
           #download pre-compiled binary instead of compiling it ourselves every time
           gh release download -R rust-lang/mdbook --clobber -p "*unknown-linux-gnu*"
-          tar xzf "mdbook*"
+          tar xzf $(ls | grep mdbook | head -n 1)
         env:
           GH_TOKEN: ${{ github.token }}
-
       - name: build docs
         run: |
-          mdbook build docs && mdbook test docs
+          ./mdbook build docs && ./mdbook test docs
   coverage:
     # use llvm-cov to build and collect coverage and outputs in a format that
     # is compatible with codecov.io
