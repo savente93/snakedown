@@ -1,4 +1,4 @@
-use color_eyre::Result;
+use color_eyre::{Result, eyre::OptionExt};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -13,7 +13,7 @@ use crate::render::{
     formats::{Renderer, md::MdRenderer, zola::ZolaRenderer},
 };
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
 pub struct ExternalIndex {
     pub name: Option<String>,
     pub url: String,
@@ -30,17 +30,17 @@ pub struct Config {
     pub externals: HashMap<String, ExternalIndex>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
 pub struct RenderConfig {
     zola: Option<ZolaConfig>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
 pub struct ZolaConfig {
     use_shortcodes: bool,
 }
 
-#[derive(Default, Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Default, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct ConfigBuilder {
     site_root: Option<PathBuf>,
     api_content_path: Option<PathBuf>,
@@ -236,6 +236,35 @@ impl ConfigBuilder {
         let config: ConfigBuilder = toml::from_str(&file_contents)?;
         Ok(config)
     }
+
+    pub fn from_pyproject(path: &Path) -> Result<ConfigBuilder> {
+        let mut file_contents = String::new();
+        let mut file = File::open(path)?;
+        file.read_to_string(&mut file_contents)?;
+        let pyproject: PyProjectToml = toml::from_str(&file_contents)?;
+        let tool = pyproject
+            .tool
+            .ok_or_eyre("pyproject.toml did not contain a [tool] table")?;
+        let snakedown_table = tool
+            .snakedown
+            .ok_or_eyre("tool table in pyproject.toml did not contain a snakedown table")?;
+
+        let config_builder = ConfigBuilder::default().merge(snakedown_table);
+
+        Ok(config_builder)
+    }
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PyProjectToml {
+    #[serde(flatten)]
+    inner: pyproject_toml::PyProjectToml,
+    tool: Option<Tool>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub struct Tool {
+    snakedown: Option<ConfigBuilder>,
 }
 
 #[cfg(test)]
@@ -249,6 +278,25 @@ mod test {
     use assert_fs::TempDir;
     use color_eyre::Result;
 
+    #[test]
+    fn test_pyproject_toml() -> Result<()> {
+        let test_path = PathBuf::from("tests/test_pyproject.toml");
+
+        let config_builder = ConfigBuilder::from_pyproject(&test_path)?;
+
+        let expected = ConfigBuilder::default()
+            .with_site_root(Some(PathBuf::from("bar")))
+            .with_api_content_path(Some(PathBuf::from("foo/")))
+            .with_pkg_path(Some(PathBuf::from("hydromt")))
+            .with_skip_undoc(Some(true))
+            .with_skip_private(Some(false))
+            .with_exclude(Some(vec![]))
+            .with_ssg(Some(SSG::Zola));
+
+        assert_eq!(config_builder, expected);
+
+        Ok(())
+    }
     #[test]
     fn empty_builder_creates_valid_config() -> Result<()> {
         let config = ConfigBuilder::default().build();

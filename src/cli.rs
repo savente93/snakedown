@@ -34,6 +34,13 @@ impl LogLevel for CustomLogLevel {
 pub fn resolve_runtime_config(args: Args) -> Result<Config> {
     let mut config_builder = ConfigBuilder::default().init_with_defaults();
 
+    let pyproject_path = PathBuf::from("pyproject.toml");
+
+    if pyproject_path.exists() && pyproject_path.is_file() {
+        let pyproject_config = ConfigBuilder::from_pyproject(&pyproject_path)?;
+        config_builder = config_builder.merge(pyproject_config);
+    }
+
     if let Some(config_file_path) = discover_config_file(args.config_file) {
         let file_config_builder = ConfigBuilder::from_path(&config_file_path)?;
         config_builder = config_builder.merge(file_config_builder);
