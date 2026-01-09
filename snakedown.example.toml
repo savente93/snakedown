@@ -1,14 +1,14 @@
 api_content_path = "api/"
-site_root = "docs"
-pkg_path = "."
-skip_undoc = true
-skip_private = false
-ssg = "Markdown"
-exclude = []
+site_root        = "docs"
+pkg_path         = "."
+skip_undoc       = true
+skip_private     = false
+ssg              = "Markdown"
+exclude          = []
 
 [externals]
-builtins = {name = "Python", url = "https://docs.python.org/3/"}
-numpy= {  name= "Numpy", url ="https://numpy.org/doc/stable/" }
+builtins = { name = "Python", url = "https://docs.python.org/3/" }
+numpy    = { name = "Numpy", url = "https://numpy.org/doc/stable/" }
 
 
 [render.zola]
