@@ -11,14 +11,20 @@ use std::path::PathBuf;
 use crate::config::Config;
 use crate::fs::crawl_package;
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
+use crate::indexing::external::cache::init_cache;
+use crate::indexing::external::fetch::fill_cache;
 use crate::indexing::index::RawIndex;
+use crate::parsing::sphinx::inv_file::parse_objects_inv_file;
+use crate::parsing::sphinx::types::{ExternalSphinxRef, StdRole};
 use crate::render::formats::Renderer;
 pub use crate::render::render_module;
 use crate::render::render_object;
+use parsing::sphinx::types::SphinxType;
 
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use tera::Context;
+use url::Url;
 
 pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
     let absolute_pkg_path = config.pkg_path.canonicalize()?;
@@ -42,6 +48,27 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
         config.skip_undoc,
         config.skip_private,
     )?;
+
+    let cache_path = init_cache(None)?;
+
+    fill_cache(&config.externals).await?;
+
+    // TODO: don't hardcode the sphinx subdir. should make it more flexible so that different
+    // formats have their own function when I add them (if there end up being any)
+    for (key, ext_index) in config.externals {
+        let inv_path = cache_path.join("sphinx").join(key).with_extension("inv");
+        let external_base_url = Url::parse(&ext_index.url)?;
+
+        let inv_references = parse_objects_inv_file(&inv_path)?;
+        for r in inv_references {
+            if !should_include_reference(&r) {
+                continue;
+            }
+            index
+                .external_object_store
+                .insert(r.name, external_base_url.clone().join(&r.location)?);
+        }
+    }
 
     crawl_package(
         &mut index,
@@ -74,6 +101,20 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
     Ok(errored)
 }
 
+fn should_include_reference(r: &ExternalSphinxRef) -> bool {
+    // just include python refs and std doc refs, we'll see if we actually
+    // need/want the rest
+    match r.sphinx_type {
+        SphinxType::Std(StdRole::Doc) | SphinxType::Python(_) => true,
+        SphinxType::C(_)
+        | SphinxType::Std(_)
+        | SphinxType::Mathematics(_)
+        | SphinxType::Cpp(_)
+        | SphinxType::JavaScript(_)
+        | SphinxType::ReStructuredText(_) => false,
+    }
+}
+
 #[cfg(test)]
 mod test {
 
@@ -81,7 +122,6 @@ mod test {
 
     use crate::config::ConfigBuilder;
     use crate::render::SSG;
-
     use crate::render_docs;
 
     use pretty_assertions::assert_eq;
