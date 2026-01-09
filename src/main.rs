@@ -23,27 +23,18 @@ async fn main() -> Result<()> {
     let config = resolve_runtime_config(args)?;
 
     tracing::debug!("fetching external indices");
-    for (key, external_index) in config.externals {
+    for (key, external_index) in &config.externals {
         tracing::debug!("fetching: {}", key);
         cache_remote_objects_inv(
             &external_index.url,
-            external_index.name.unwrap_or(key),
+            external_index.name.clone().unwrap_or(key.clone()),
             None,
             false,
         )
         .await?;
     }
 
-    render_docs(
-        &config.site_root,
-        &config.api_content_path,
-        &config.pkg_path,
-        config.skip_private,
-        config.skip_undoc,
-        config.exclude,
-        &config.renderer,
-    )
-    .await?;
+    render_docs(config).await?;
 
     Ok(())
 }

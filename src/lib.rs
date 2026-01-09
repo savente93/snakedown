@@ -6,8 +6,9 @@ pub mod render;
 
 use std::fs::{File, create_dir_all};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use crate::config::Config;
 use crate::fs::crawl_package;
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
 use crate::indexing::index::RawIndex;
@@ -19,20 +20,15 @@ use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use tera::Context;
 
-pub async fn render_docs<R: Renderer>(
-    site_root: &Path,
-    api_content_path: &Path,
-    pkg_path: &Path,
-    skip_private: bool,
-    skip_undoc: bool,
-    exclude: Vec<PathBuf>,
-    renderer: &R,
-) -> Result<Vec<PathBuf>> {
-    let absolute_pkg_path = pkg_path.canonicalize()?;
-    let out_path = if let Some(content_path) = renderer.content_path() {
-        site_root.join(content_path).join(api_content_path)
+pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
+    let absolute_pkg_path = config.pkg_path.canonicalize()?;
+    let out_path = if let Some(content_path) = config.renderer.content_path() {
+        config
+            .site_root
+            .join(content_path)
+            .join(&config.api_content_path)
     } else {
-        site_root.join(api_content_path)
+        config.site_root.join(&config.api_content_path)
     };
     let errored = vec![];
 
@@ -41,13 +37,17 @@ pub async fn render_docs<R: Renderer>(
     ctx.insert("SNAKEDOWN_VERSION", &sd_version);
 
     tracing::info!("indexing package at {}", &absolute_pkg_path.display());
-    let mut index = RawIndex::new(absolute_pkg_path.clone(), skip_undoc, skip_private)?;
+    let mut index = RawIndex::new(
+        absolute_pkg_path.clone(),
+        config.skip_undoc,
+        config.skip_private,
+    )?;
 
     crawl_package(
         &mut index,
         &absolute_pkg_path,
-        skip_private,
-        exclude.clone(),
+        config.skip_private,
+        config.exclude.clone(),
     )?;
 
     match index.validate_references() {
@@ -59,13 +59,13 @@ pub async fn render_docs<R: Renderer>(
         )),
     }?;
 
-    index.pre_process(renderer, api_content_path)?;
+    index.pre_process(&config.renderer, &config.api_content_path)?;
 
     create_dir_all(&out_path)?;
 
     for (key, object) in index.internal_object_store.iter() {
         let file_path = out_path.join(key).with_added_extension("md");
-        let rendered = render_object(object, key.clone(), renderer, &ctx)?;
+        let rendered = render_object(object, key.clone(), &config.renderer, &ctx)?;
         let rendered_trimmed = rendered.trim_start();
         let mut file = File::create(file_path)?;
         file.write_all(rendered_trimmed.as_bytes())?;
@@ -79,7 +79,8 @@ mod test {
 
     use std::path::{Path, PathBuf};
 
-    use crate::render::formats::md::MdRenderer;
+    use crate::config::ConfigBuilder;
+    use crate::render::SSG;
 
     use crate::render_docs;
 
@@ -194,20 +195,27 @@ mod test {
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_full");
         let api_content_path = PathBuf::from("");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(false))
+            .with_skip_private(Some(false))
+            .with_ssg(Some(crate::render::SSG::Markdown));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+        ]);
 
-        render_docs(
-            temp_dir.path(),
-            &api_content_path,
-            &test_pkg_dir,
-            false,
-            false,
-            vec![
-                PathBuf::from("test_pkg/excluded_file.py"),
-                PathBuf::from("test_pkg/excluded_module"),
-            ],
-            &MdRenderer::new(),
-        )
-        .await?;
+        config_builder.add_external(
+            "numpy".to_string(),
+            Some("numpy".to_string()),
+            "https://numpy.org/doc/stable".to_string(),
+        )?;
+        let config = config_builder.build()?;
+
+        render_docs(config).await?;
 
         assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
@@ -219,41 +227,49 @@ mod test {
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_no_private");
         let api_content_path = PathBuf::from("");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(true))
+            .with_ssg(Some(SSG::Markdown))
+            .with_skip_private(Some(true));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+        ]);
 
-        render_docs(
-            temp_dir.path(),
-            &api_content_path,
-            &test_pkg_dir,
-            true,
-            true,
-            vec![
-                PathBuf::from("test_pkg/excluded_file.py"),
-                PathBuf::from("test_pkg/excluded_module"),
-            ],
-            &MdRenderer::new(),
-        )
-        .await?;
+        let config = config_builder.build()?;
+
+        render_docs(config).await?;
 
         assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
         Ok(())
     }
+
     #[tokio::test]
     async fn render_test_pkg_docs_exit_on_err() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let api_content_path = PathBuf::from("api/");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(true))
+            .with_ssg(Some(SSG::Markdown))
+            .with_skip_private(Some(true));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+        ]);
 
-        render_docs(
-            &test_pkg_dir,
-            &api_content_path,
-            temp_dir.path(),
-            false,
-            false,
-            vec![],
-            &MdRenderer::new(),
-        )
-        .await?;
+        let config = config_builder.build()?;
+
+        render_docs(config).await?;
 
         Ok(())
     }
