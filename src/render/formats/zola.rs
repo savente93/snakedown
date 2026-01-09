@@ -47,6 +47,9 @@ impl Renderer for ZolaRenderer {
         };
         Ok(rendered)
     }
+    fn content_path(&self) -> Option<PathBuf> {
+        Some(PathBuf::from("content"))
+    }
 }
 
 #[cfg(test)]
