@@ -8,6 +8,8 @@ exclude = []
 
 [externals]
 builtins = {name = "Python", url = "https://docs.python.org/3/"}
+numpy= {  name= "Numpy", url ="https://numpy.org/doc/stable/" }
+
 
 [render.zola]
 use_shortcodes = true

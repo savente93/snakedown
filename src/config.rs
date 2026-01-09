@@ -19,6 +19,17 @@ pub struct ExternalIndex {
     pub url: String,
 }
 
+impl ExternalIndex {
+    pub fn new(name: Option<String>, url: String) -> Self {
+        let url = if url.ends_with("/") {
+            url
+        } else {
+            format!("{}/", url)
+        };
+        Self { name, url }
+    }
+}
+
 pub struct Config {
     pub site_root: PathBuf,
     pub api_content_path: PathBuf,
@@ -57,11 +68,18 @@ impl ConfigBuilder {
     pub fn init_with_defaults(mut self) -> Self {
         let mut externals = HashMap::new();
         externals.insert(
+            "numpy".to_string(),
+            ExternalIndex::new(
+                Some("Numpy".to_string()),
+                "https://numpy.org/doc/stable/".to_string(),
+            ),
+        );
+        externals.insert(
             "builtins".to_string(),
-            ExternalIndex {
-                name: Some("Python".to_string()),
-                url: "https://docs.python.org/3/".to_string(),
-            },
+            ExternalIndex::new(
+                Some("Python".to_string()),
+                "https://docs.python.org/3/".to_string(),
+            ),
         );
         self = self
             .with_site_root(Some(PathBuf::from("docs")))
@@ -141,7 +159,7 @@ impl ConfigBuilder {
 
         let externals = self.externals.get_or_insert_default();
 
-        let external_index = ExternalIndex { name, url: link };
+        let external_index = ExternalIndex::new(name, link);
 
         externals.insert(key, external_index);
 

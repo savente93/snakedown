@@ -41,16 +41,16 @@ pub async fn cache_remote_objects_inv(
     Ok(())
 }
 
+pub async fn fetch_objects_inv_blocking(url: Url) -> Result<Response> {
+    Ok(reqwest::get(url).await?)
+}
+
 pub async fn fill_cache(externals: &HashMap<String, ExternalIndex>) -> Result<()> {
     for (key, external_index) in externals {
         tracing::debug!("fetching: {}", key);
         cache_remote_objects_inv(&external_index.url, key.to_string(), None, false).await?;
     }
     Ok(())
-}
-
-pub async fn fetch_objects_inv_blocking(url: Url) -> Result<Response> {
-    Ok(reqwest::get(url).await?)
 }
 
 #[cfg(test)]

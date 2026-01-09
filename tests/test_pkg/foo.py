@@ -5,6 +5,7 @@ Example module demonstrating a calculator.
 
 See Also:
     [[test_pkg.bar]]
+    [[numpy.linspace]]
 """
 
 __all__ = ["add", "multiply"]
