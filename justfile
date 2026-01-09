@@ -15,12 +15,12 @@ lint:
     cargo clippy --all --all-targets --all-features -- --deny warnings
     cargo fmt --all -- --check
     typos .
-    taplo fmt --check .
+    fd -e toml -x taplo fmt --check {}
 
 fix-lint:
     cargo fmt --all
     typos -w .
-    taplo fmt --check .
+    fd -e toml -x taplo fmt {}
     cargo clippy --fix
 
 
