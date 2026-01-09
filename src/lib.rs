@@ -29,7 +29,11 @@ pub fn render_docs<R: Renderer>(
     renderer: &R,
 ) -> Result<Vec<PathBuf>> {
     let absolute_pkg_path = pkg_path.canonicalize()?;
-    let out_path = site_root.join(api_content_path);
+    let out_path = if let Some(content_path) = renderer.content_path() {
+        site_root.join(content_path).join(api_content_path)
+    } else {
+        site_root.join(api_content_path)
+    };
     let errored = vec![];
 
     let mut ctx = Context::new();
