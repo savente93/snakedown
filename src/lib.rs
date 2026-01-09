@@ -19,7 +19,7 @@ use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use tera::Context;
 
-pub fn render_docs<R: Renderer>(
+pub async fn render_docs<R: Renderer>(
     site_root: &Path,
     api_content_path: &Path,
     pkg_path: &Path,
@@ -188,8 +188,8 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn render_test_pkg_docs_full() -> Result<()> {
+    #[tokio::test]
+    async fn render_test_pkg_docs_full() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_full");
@@ -206,14 +206,15 @@ mod test {
                 PathBuf::from("test_pkg/excluded_module"),
             ],
             &MdRenderer::new(),
-        )?;
+        )
+        .await?;
 
         assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
         Ok(())
     }
-    #[test]
-    fn render_test_pkg_docs_no_private_no_undoc() -> Result<()> {
+    #[tokio::test]
+    async fn render_test_pkg_docs_no_private_no_undoc() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let expected_result_dir = PathBuf::from("tests/rendered_no_private");
@@ -230,14 +231,15 @@ mod test {
                 PathBuf::from("test_pkg/excluded_module"),
             ],
             &MdRenderer::new(),
-        )?;
+        )
+        .await?;
 
         assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
 
         Ok(())
     }
-    #[test]
-    fn render_test_pkg_docs_exit_on_err() -> Result<()> {
+    #[tokio::test]
+    async fn render_test_pkg_docs_exit_on_err() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
         let api_content_path = PathBuf::from("api/");
@@ -250,7 +252,8 @@ mod test {
             false,
             vec![],
             &MdRenderer::new(),
-        )?;
+        )
+        .await?;
 
         Ok(())
     }
