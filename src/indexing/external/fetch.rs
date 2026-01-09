@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{File, remove_file},
     io::Write,
     path::PathBuf,
@@ -7,7 +8,7 @@ use std::{
 use reqwest::Response;
 use url::Url;
 
-use crate::indexing::external::cache::init_cache;
+use crate::{config::ExternalIndex, indexing::external::cache::init_cache};
 use color_eyre::Result;
 
 pub async fn cache_remote_objects_inv(
@@ -37,6 +38,14 @@ pub async fn cache_remote_objects_inv(
     let mut file = File::create(cache_path)?;
 
     file.write_all(&data)?;
+    Ok(())
+}
+
+pub async fn fill_cache(externals: &HashMap<String, ExternalIndex>) -> Result<()> {
+    for (key, external_index) in externals {
+        tracing::debug!("fetching: {}", key);
+        cache_remote_objects_inv(&external_index.url, key.to_string(), None, false).await?;
+    }
     Ok(())
 }
 

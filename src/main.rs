@@ -42,7 +42,8 @@ async fn main() -> Result<()> {
         config.skip_undoc,
         config.exclude,
         &config.renderer,
-    )?;
+    )
+    .await?;
 
     Ok(())
 }
