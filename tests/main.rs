@@ -37,7 +37,7 @@ fn test_cli_with_zola() -> Result<()> {
 
     let mut cmd = Command::cargo_bin("snakedown")?;
     cmd.arg("tests/test_pkg")
-        .arg(target_dir.join("content"))
+        .arg(&target_dir)
         .arg("--skip-undoc")
         .arg("--skip-private")
         .arg("-e")

@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use color_eyre::Result;
 use url::Url;
@@ -41,6 +41,10 @@ impl Renderer for MdRenderer {
             None => format!("[{t}]({t})"),
         };
         Ok(rendered)
+    }
+
+    fn content_path(&self) -> Option<PathBuf> {
+        None
     }
 }
 
