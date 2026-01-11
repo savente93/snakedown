@@ -46,6 +46,10 @@ impl Renderer for MdRenderer {
     fn content_path(&self) -> Option<PathBuf> {
         None
     }
+
+    fn index_file(&self, _title: Option<String>) -> Option<(PathBuf, String)> {
+        None
+    }
 }
 
 #[cfg(test)]

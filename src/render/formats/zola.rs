@@ -50,6 +50,12 @@ impl Renderer for ZolaRenderer {
     fn content_path(&self) -> Option<PathBuf> {
         Some(PathBuf::from("content"))
     }
+
+    fn index_file(&self, title: Option<String>) -> Option<(PathBuf, String)> {
+        let index_front_matter = self.render_front_matter(title.as_deref());
+
+        Some((PathBuf::from("_index.md"), index_front_matter))
+    }
 }
 
 #[cfg(test)]

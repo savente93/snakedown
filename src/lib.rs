@@ -98,6 +98,13 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
         file.write_all(rendered_trimmed.as_bytes())?;
     }
 
+    if let Some((index_file_path, index_file_content)) =
+        &config.renderer.index_file(Some("API".to_string()))
+    {
+        let mut file = File::create(out_path.join(index_file_path))?;
+        file.write_all(index_file_content.as_bytes())?;
+    }
+
     Ok(errored)
 }
 
