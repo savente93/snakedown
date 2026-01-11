@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## [0.2.0](https://github.com/savente93/snakedown/compare/v0.1.0...v0.2.0) - 2026-01-11
+
+### Added
+
+- enable expansion of external references
+- add GHA to deploy book
+- fill out user guide
+- add an mdbook for documentation
+- add ability to read config from pyproject
+- first impl of internal linking
+- add comment about implementation strategy
+- implement ref checking for fully qualified refs
+- add internal links to docstrings in test pkg
+- use tera to render page templates
+- add tera as dependency
+- refactor indexing logic
+- add general python object docs enum
+- move to flat output structure
+- add python builting as external default example
+- implment passing links to external inventory
+- implement passing optoins to renderers from config
+- implement internal link rendering
+- implement external link rendering
+- allow config file passed through cli
+- implement merging for config builders
+- impl config builder pattern
+- implement basic object.inv fetching and caching
+- hand implement sphinx ref parsing
+- implement sphinx inventory header parsing
+
+### Fixed
+
+- justfile zola build command
+- add an index file to output if necessary
+- add unknown sphinx std roles
+- add contributing.md to point to docs
+- taplo lint
+- make render_docs async
+- add content path to Renderer
+- add mdbook to test
+- add doc to just file ci command
+- replace local zola site with git submodule
+- make generated links relative to site root
+- move prefix stripping from rendering to parsing
+- fix oder of compare_tree
+- remove prefix from docs extraction to rendering
+- remove sub_package_index from pakcage index struct
+- move indexing/{cache,fetch}.rs to their own mod
+- ignore snakedown cache in repo
+- fix just zola command
+- expand sphinx shorthands
+- fetch correct objects.inv
+- run fetching external obj as async
+
+### Other
+
+- refactor render_docs api
+- add Contributing guidelines
+- *(deps)* bump actions/checkout from 5 to 6
+- *(deps)* bump toml_edit from 0.22.26 to 0.23.2
+- add .bacon-locations to .gitignore
+- *(deps)* bump actions/checkout from 4 to 5
+- add badges to readme
+
 
 ### ✨ Features
 
