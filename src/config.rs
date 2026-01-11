@@ -68,23 +68,23 @@ impl ConfigBuilder {
     pub fn init_with_defaults(mut self) -> Self {
         let mut externals = HashMap::new();
         externals.insert(
-            "numpy".to_string(),
-            ExternalIndex::new(
-                Some("Numpy".to_string()),
-                "https://numpy.org/doc/stable/".to_string(),
-            ),
-        );
-        externals.insert(
             "builtins".to_string(),
             ExternalIndex::new(
                 Some("Python".to_string()),
                 "https://docs.python.org/3/".to_string(),
             ),
         );
+        externals.insert(
+            "numpy".to_string(),
+            ExternalIndex::new(
+                Some("Numpy".to_string()),
+                "https://numpy.org/doc/stable/".to_string(),
+            ),
+        );
         self = self
             .with_site_root(Some(PathBuf::from("docs")))
             .with_api_content_path(Some(PathBuf::from("api/")))
-            .with_skip_undoc(Some(true))
+            .with_skip_undoc(Some(false))
             .with_skip_private(Some(false))
             .with_pkg_path(Some(PathBuf::from(".")))
             .with_exclude(Some(Vec::new()))
