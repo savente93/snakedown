@@ -58,11 +58,17 @@ impl TryFrom<&str> for SphinxType {
 }
 
 #[derive(Debug, PartialEq, EnumString)]
-#[strum(serialize_all = "camelCase")]
+#[strum(serialize_all = "kebab-case")]
 pub enum StdRole {
     Doc,
     Label,
     Term,
+    Cmdoption,
+    Pdbcommand,
+    Token,
+    Opcode,
+    MonitoringEvent,
+    Envvar,
 }
 #[derive(Debug, PartialEq, EnumString)]
 #[strum(serialize_all = "camelCase")]
