@@ -19,6 +19,8 @@ pub trait Renderer {
     // e.g. zola places content in the `content` folder at the site root
     // but markdown places it just wherever it is pointed.
     fn content_path(&self) -> Option<PathBuf>;
+
+    fn index_file(&self, title: Option<String>) -> Option<(PathBuf, String)>;
 }
 
 impl<T: Renderer + ?Sized> Renderer for &T {
@@ -41,6 +43,9 @@ impl<T: Renderer + ?Sized> Renderer for &T {
     fn content_path(&self) -> Option<PathBuf> {
         (**self).content_path()
     }
+    fn index_file(&self, title: Option<String>) -> Option<(PathBuf, String)> {
+        (**self).index_file(title)
+    }
 }
 
 impl Renderer for Box<dyn Renderer> {
@@ -60,5 +65,8 @@ impl Renderer for Box<dyn Renderer> {
     }
     fn content_path(&self) -> Option<PathBuf> {
         (**self).content_path()
+    }
+    fn index_file(&self, title: Option<String>) -> Option<(PathBuf, String)> {
+        (**self).index_file(title)
     }
 }
