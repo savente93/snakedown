@@ -53,8 +53,6 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
 
     fill_cache(&config.externals).await?;
 
-    // TODO: don't hardcode the sphinx subdir. should make it more flexible so that different
-    // formats have their own function when I add them (if there end up being any)
     for (key, ext_index) in config.externals {
         let inv_path = cache_path.join("sphinx").join(key).with_extension("inv");
         let external_base_url = Url::parse(&ext_index.url)?;
