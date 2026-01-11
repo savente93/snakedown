@@ -1,7 +1,7 @@
 api_content_path = "api/"
 site_root        = "docs"
 pkg_path         = "."
-skip_undoc       = true
+skip_undoc       = false
 skip_private     = false
 ssg              = "Markdown"
 exclude          = []
