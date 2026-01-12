@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## [0.2.1](https://github.com/savente93/snakedown/compare/v0.2.0...v0.2.1) - 2026-01-12
+
+### Added
+
+- adopt pixi in favour of just
+
+### Other
+
+- *(deps)* bump JamesIves/github-pages-deploy-action
+- *(deps)* bump actions/checkout from 4 to 6
+
 ## [0.2.0](https://github.com/savente93/snakedown/compare/v0.1.0...v0.2.0) - 2026-01-11
 
 ### Added
