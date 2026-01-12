@@ -17,3 +17,6 @@ _build/
 
 **/public
 docs/book
+# pixi environments
+.pixi/*
+!.pixi/config.toml
