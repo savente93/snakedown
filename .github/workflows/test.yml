@@ -17,51 +17,26 @@ name: test
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: test-suite
+    name: suite
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install rust stable
-        uses: dtolnay/rust-toolchain@master
+      - uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          toolchain: stable
-      - name: cargo generate-lockfile
-        # enable this ci template to run regardless of whether the lockfile is checked in or not
-        if: hashFiles('Cargo.lock') == ''
-        run: cargo generate-lockfile
-      # https://twitter.com/jonhoo/status/1571290371124260865
-      # install zola which we need for the integration test
-      - name: Install Zola
-        uses: taiki-e/install-action@v2
-        with:
-            tool: zola@0.19.1
-      - name: cargo test --locked
-        run: cargo test --locked --all-features --all-targets
-      # https://github.com/rust-lang/cargo/issues/6669
-      - name: cargo test --doc
-        run: cargo test --locked --all-features --doc
+          pixi-version: "v0.59.0"
+      - run: pixi run test
   docs:
     runs-on: ubuntu-latest
-    name: book
+    name: docs
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install rust stable
-        uses: dtolnay/rust-toolchain@master
+      - uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          toolchain: stable
-      - name: Install mdbook
-        run: |
-          #download pre-compiled binary instead of compiling it ourselves every time
-          gh release download -R rust-lang/mdbook --clobber -p "*unknown-linux-gnu*"
-          tar xzf $(ls | grep mdbook | head -n 1)
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - name: build docs
-        run: |
-          ./mdbook build docs && ./mdbook test docs
+          pixi-version: "v0.59.0"
+      - run: pixi run doc
   coverage:
     # use llvm-cov to build and collect coverage and outputs in a format that
     # is compatible with codecov.io
@@ -85,28 +60,17 @@ jobs:
     #
     # for lots of more discussion
     runs-on: ubuntu-latest
-    name: ubuntu / stable / coverage
+    name: coverage
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
+      - uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          components: llvm-tools-preview
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Install Zola
-        uses: taiki-e/install-action@v2
-        with:
-            tool: zola@0.19.1
-      - name: cargo generate-lockfile
-        if: hashFiles('Cargo.lock') == ''
-        run: cargo generate-lockfile
-      - name: cargo llvm-cov
-        run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
+          pixi-version: "v0.59.0"
+      - run: pixi run cov-ci
       - name: Record Rust version
-        run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
+        run: pixi run echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v5
         with:

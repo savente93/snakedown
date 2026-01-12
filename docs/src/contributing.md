@@ -80,15 +80,23 @@ For code organization, we recommend
 
 ### Dev tips
 
-You are not required to have the following tools installed to work on snakedown, but they can make things a lot easier:
+We use [`pixi`](https://pixi.prefix.dev/latest/) to manage installation of external tools, and as a cross platform task runner. Though originally developed for Python, it has access to `conda-forge` where many tools are already available, as well as making sure we use the correct versions through it's lockfile.
 
-- [`just`](https://github.com/casey/just) A command runner to run (and document) workflows we run, including installing dev and publish dependencies.
-- [`pre-commit`](https://pre-commit.com) This will run lints when you try to commit so you don't fail CI tasks unnecessarily.
+Though not necessary, as you can install the tools yourself and run the commands listed in the `pixi.toml` file yourself, we recommend accessing our workflows through `pixi`. You can install all the dependencies with the command `pixi install`. The default environment contains everything you might need and as a dev this is almost certainly what you want.
+
+You can see which tasks you can run with the command `pixi task run`. This should give you an overview of all common workflows. Do note that if you install everything through pixi, then you will need to either activate the environment with `pixi shell` or run tasks (including things like `cargo run`) through pixi like so: `pixi run test` or `pixi run cargo run`.
+
+In case you would like to install the tools yourself, below is a list of tools we use:
+
+- [`pre-commit`](https://pre-commit.com) This will run lints when you try to commit so you don't fail CI tasks unnecessarily. Make sure to activate the hooks by running `pre-commit install` after you clone the repo.
 - [`bacon`](https://github.com/Canop/bacon) A runner that will watch your files and run checks, tests, linting etc. when they change. Very useful while developing for fast feedback cycles.
-- [`gh`](https://github.com/cli/cli) Can be used this to quickly open PRs when done working locally and make sure they aren't duplicated. Quite convenient
-- [`zola`](https://github.com/getzola/zola) not technically required as our CI will test things with it, but very handy to have locally to iterate faster.
+- [`gh`](https://github.com/cli/cli) Can be used this to quickly open PRs when done working locally and make sure they aren't duplicated. Quite convenient, but not necessary.
+- While our CI will test the outputs with all generators we support, and therefore you don't technically have to install them, it makes local development a lot easier. Currently we support the following formats:
+    - [`zola`](https://github.com/getzola/zola)
 
 Also keep in mind not all our rules have to be met at every single stage. It is totally allowed to iterate/prototype until you are happy with things, and then clean up after!
+
+### Setting up a dev environment
 
 ##  Publishing
 

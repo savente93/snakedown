@@ -1,0 +1,87 @@
+[workspace]
+authors   = ["Sam Vente <savente93@proton.me>"]
+channels  = ["conda-forge"]
+name      = "snakedown"
+platforms = ["win-64", "linux-64"]
+version   = "0.1.0"
+
+[tasks]
+test     = "cargo test --all"
+cov-ci   = "cargo llvm-cov --locked --all-features --lcov --output-path lcov.info"
+cov-open = "cargo llvm-cov --locked --all-features --open"
+
+
+[dependencies]
+rust           = ">=1.92.0,<1.93"
+cargo-llvm-cov = ">=0.6.23,<0.7"
+
+[feature.docs.dependencies]
+mdbook = ">=0.5.2,<0.6"
+
+[feature.docs.tasks]
+cargo-doc      = "cargo doc --no-deps --all-features --workspace"
+cargo-doc-open = "cargo doc --no-deps --all-features --workspace --open"
+book-build     = "mdbook build docs"
+book-serve     = "mdbook serve docs"
+book-test      = "mdbook test docs"
+
+doc      = { depends-on = ["cargo-doc", "book-build", "book-test"] }
+doc-open = { depends-on = ["cargo-doc-open", "book-serve"] }
+
+[feature.zola.dependencies]
+zola = ">=0.22.0,<0.23"
+
+[feature.zola.tasks]
+clean-zola-output    = "rm -rf tests/zola_test_site/content/api"
+zola-serve-test-site = "zola --root tests/zola_test_site serve"
+snakedown-build-zola = "cargo r -- tests/test_pkg tests/zola_test_site api --ssg zola -e tests/test_pkg/excluded_file.py -e tests/test_pkg/excluded_module/ -vvv"
+
+zola = { depends-on = [
+  "clean-zola-output",
+  "snakedown-build-zola",
+  "zola-serve-test-site",
+] }
+
+[feature.dev.dependencies]
+gh    = ">=2.83.2,<3"
+taplo = ">=0.10.0,<0.11"
+typos = ">=1.42.0,<2"
+
+[feature.dev.tasks]
+typos-check = "typos ."
+clippy-check = "cargo clippy --all --all-targets --all-features -- --deny warnings"
+rust-fmt-check = "cargo fmt --all --check"
+taplo-check = "taplo fmt --check **/*.toml"
+lint = { depends-on = [
+  "typos-check",
+  "clippy-check",
+  "rust-fmt-check",
+  "taplo-check",
+] }
+
+taplo-fix = "taplo fmt **/*.toml"
+rust-fmt-fix = "cargo fmt --all"
+typos-fix = "typos -w ."
+clippy-fix = "cargo clippy --fix"
+lint-fix = { depends-on = [
+  "rust-fmt-fix",
+  "typos-fix",
+  "taplo-fix",
+  "clippy-fix",
+] }
+
+
+gh-check-existing-pr     = "gh pr list --head \"$(git rev-parse --abbrev-ref HEAD)\" --json author --jq \". == []\" | grep -q \"true\""
+git-check-clean-worktree = "git diff-index --quiet HEAD --"
+gh-create-pr             = "gh pr create --web --fill-first"
+
+pr = { depends-on = [
+  "gh-check-existing-pr",
+  "git-check-clean-worktree",
+  "gh-create-pr",
+] }
+
+[environments]
+default = { features = ["default", "dev", "zola", "docs"] }
+test    = { features = ["default", "zola"] }
+docs    = { features = ["default", "docs"] }

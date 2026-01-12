@@ -1,12 +1,16 @@
-use assert_cmd::Command;
 use color_eyre::eyre::Result;
 use tempfile::tempdir;
+
+use assert_cmd::cargo::cargo_bin_cmd;
+use assert_cmd::prelude::*;
+
+use std::process::Command;
 
 #[test]
 fn test_cli_with_all_options() -> Result<()> {
     let tempdir = tempdir()?;
 
-    let mut cmd = Command::cargo_bin("snakedown")?;
+    let mut cmd = cargo_bin_cmd!();
     cmd.arg("tests/test_pkg")
         .arg(tempdir.path())
         .arg("--skip-undoc")
@@ -35,7 +39,7 @@ fn test_cli_with_zola() -> Result<()> {
         .arg(&target_dir)
         .assert();
 
-    let mut cmd = Command::cargo_bin("snakedown")?;
+    let mut cmd = cargo_bin_cmd!();
     cmd.arg("tests/test_pkg")
         .arg(&target_dir)
         .arg("--skip-undoc")
