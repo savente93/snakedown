@@ -4,9 +4,12 @@
 [![codecov](https://codecov.io/gh/savente93/SnakeDown/branch/main/graph/badge.svg)](https://codecov.io/gh/savente93/SnakeDown)
 [![crates.io](https://img.shields.io/crates/v/snakedown)](https://crates.io/crates/snakedown)
 [![Docs.rs](https://docs.rs/snakedown/badge.svg)](https://docs.rs/snakedown)
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
 
 
-A Python API extractor written in Rust. I got frustrated with the standard tools used for documentation generation used in Python, namely that all of the ones I've worked with have at least one of the following to characteristics:
+A Python API extractor written in Rust, with the goal of allowing you to host python documentation with your favourite static site generator.
+
+I got frustrated with the standard tools used for documentation generation used in Python, namely that all of the ones I've worked with have at least one of the following to characteristics:
 
 1. slow
 2. poor developer experience (e.g. [Sphinx](https://www.sphinx-doc.org/en/master/) lacks a `serve` functionality)
@@ -18,20 +21,18 @@ There are many excellent Static Site Generators like [Hugo](https://gohugo.io) o
 SnakeDown is an experiment to get to a place where using Hugo or Zola for python documentation generation is a viable option.
 
 
-(Currently mostly for shits and giggles, but who knows.)
-
 ## Design goals:
 
 While the project might not cover all of these goals yet, these are some of the things I try to keep in mind when working on SnakeDown (in loose order of precedence):
 
 1. **Sensible defaults over infinite configurability**. Infinite configuration comes with a lot of complexity both for user and developer, and in my opinion it is not worth it, especially at the stage SnakeDown is at now. I'd rather do 10 things right 80% of the time, then 2 things right 99.999% of the time.
 2. **Correctness over speed** While speed is an explicit goal of this project, correctness should take precedent. Doing the wrong thing extremely fast is useless.
-3. **Be fast** We only *parse* the source code to extract the docstrings from it, but we don't actually have to do any execution. While this might mean we can't always fully expand everything, type signatures are constants or names in the vast majority of cases, so this is a decent alternative. This by itself should make us Fast Enough :tm:
+3. **Be fast (enough)** We only *parse* the source code to extract the docstrings from it, but we don't actually have to do any execution. While this might mean we can't always fully expand everything, type signatures are constants or names in the vast majority of cases, so this is a decent alternative. This by itself should make us Fast Enough :tm:
 4. **Be fun** This is a personal project for the time being, and I like to have fun with those.
 
 ## Status
 
-Currently, SnakeDown is solidly in the MVP state. While I am quite happy with it so far, you use it at your own risk. That said, I always welcome bug reports and feature requests if you do decide to try it! Below is a loose planning of the features I want to work on
+Currently, SnakeDown is solidly in the MVP state. As of `v0.2.0` it should be usable. However, as it has not seen much real world use yet, there may still be bugs. While I am quite happy with it so far, you use it at your own risk. That said, I always welcome bug reports and feature requests if you do decide to try it! Below is a loose planning of the features I want to work on
 
 
 ## Loose Roadmap:

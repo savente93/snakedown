@@ -1,10 +1,3 @@
-# This workflow runs whenever a PR is opened or updated, or a commit is pushed to main. It runs
-# several checks:
-# - fmt: checks that the code is formatted according to rustfmt
-# - clippy: checks that the code does not contain any clippy warnings
-# - doc: checks that the code can be documented without errors
-# - hack: check combinations of feature flags
-# - msrv: check that the msrv specified in the crate is correct
 permissions:
   contents: read
 # This configuration allows maintainers of this repo to create a branch and pull request based on
@@ -14,6 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
+
 # If new code is pushed to a PR branch, then cancel in progress workflows for that PR. Ensures that
 # we don't waste CI time, and returns results quicker https://github.com/jonhoo/rust-ci-conf/pull/5
 concurrency:
@@ -21,84 +15,17 @@ concurrency:
   cancel-in-progress: true
 name: check
 jobs:
-  fmt:
+  lint:
     runs-on: ubuntu-latest
-    name: stable / fmt
+    name: linting
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        name: install pixi
         with:
-          components: rustfmt
-      - name: cargo fmt --check
-        run: cargo fmt --check
-  clippy:
-    runs-on: ubuntu-latest
-    name: clippy
-    permissions:
-      contents: read
-      checks: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy
-      - name: cargo clippy
-        uses: giraffate/clippy-action@v1
-        with:
-          reporter: 'github-pr-check'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-  # this is commented out because there is nothing to check yet since we don't have a previous versions yet
-  # I don't want my templates to have red CI when they've just been created
-  # semver:
-  #   runs-on: ubuntu-latest
-  #   name: semver
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #       with:
-  #         submodules: true
-  #     - name: Install stable
-  #       uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         components: rustfmt
-  #     - name: cargo-semver-checks
-  #       uses: obi1kenobi/cargo-semver-checks-action@v2
-  doc:
-    # run docs generation on nightly rather than stable. This enables features like
-    # https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html which allows an
-    # API be documented as only available in some specific platforms.
-    runs-on: ubuntu-latest
-    name: nightly / doc
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - name: Install nightly
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Install cargo-docs-rs
-        uses: dtolnay/install@cargo-docs-rs
-      - name: cargo docs-rs
-        run: cargo docs-rs
-  hack:
-    # cargo-hack checks combinations of feature flags to ensure that features are all additive
-    # which is required for feature unification
-    runs-on: ubuntu-latest
-    name: ubuntu / stable / features
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: cargo install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
-      # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
-      # --feature-powerset runs for every combination of features
-      - name: cargo hack
-        run: cargo hack --feature-powerset check
+          pixi-version: "v0.59.0"
+
+      - name: run lints
+        run: pixi run lint
