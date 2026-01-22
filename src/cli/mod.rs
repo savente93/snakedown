@@ -1,3 +1,4 @@
+pub mod init;
 mod verbosity;
 
 use clap::Args;
