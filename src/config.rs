@@ -6,6 +6,7 @@ use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
 };
+use toml;
 use url::Url;
 
 use crate::render::{
@@ -230,6 +231,13 @@ impl ConfigBuilder {
         }
 
         self
+    }
+
+    pub fn to_snakedown_toml(self, path: &Path) -> Result<()> {
+        let contents = toml::to_string(&self)?;
+        let mut file = File::create(path)?;
+        file.write_all(contents.as_bytes())?;
+        Ok(())
     }
 
     pub fn from_path(path: &Path) -> Result<ConfigBuilder> {

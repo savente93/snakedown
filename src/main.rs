@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 use color_eyre::eyre::Result;
 use snakedown::{config::ConfigBuilder, render_docs};
 use tracing::subscriber::set_global_default;
 
 mod cli;
 
-use crate::cli::{CliArgs, SubCommand, resolve_runtime_config};
+use crate::cli::{CliArgs, SubCommand, init::wizard as init_wizard, resolve_runtime_config};
 use clap::Parser;
 
 #[allow(clippy::missing_errors_doc)]
@@ -25,12 +27,16 @@ async fn main() -> Result<()> {
     let default_config = ConfigBuilder::default().init_with_defaults();
     let runtime_config = resolve_runtime_config(args)?;
 
-    let config = default_config.merge(runtime_config).build()?;
+    let config_builder = default_config.merge(runtime_config);
 
     match command {
-        Some(SubCommand::Init) => println!("starting init!"),
+        Some(SubCommand::Init) => {
+            let init_config = init_wizard()?;
+            init_config.to_snakedown_toml(&PathBuf::from("snakedown.toml"))?;
+        }
 
         None => {
+            let config = config_builder.build()?;
             let _ = render_docs(config).await?;
         }
     };
