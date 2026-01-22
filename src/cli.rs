@@ -1,12 +1,10 @@
+use clap::Args;
 use color_eyre::Result;
 use std::path::PathBuf;
 
 use clap::Parser;
 use clap_verbosity_flag::{LogLevel, Verbosity, VerbosityFilter};
-use snakedown::{
-    config::{Config, ConfigBuilder},
-    render::SSG,
-};
+use snakedown::{config::ConfigBuilder, render::SSG};
 
 #[allow(dead_code)]
 pub struct CustomLogLevel {}
@@ -31,8 +29,8 @@ impl LogLevel for CustomLogLevel {
     }
 }
 
-pub fn resolve_runtime_config(args: Args) -> Result<Config> {
-    let mut config_builder = ConfigBuilder::default().init_with_defaults();
+pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
+    let mut config_builder = ConfigBuilder::default();
 
     let pyproject_path = PathBuf::from("pyproject.toml");
 
@@ -46,18 +44,44 @@ pub fn resolve_runtime_config(args: Args) -> Result<Config> {
         config_builder = config_builder.merge(file_config_builder);
     }
 
+    let skip_private = match args.skip_private {
+        Some(sp) => {
+            if sp.skip_private {
+                Some(true)
+            } else if sp.no_skip_private {
+                Some(false)
+            } else {
+                unreachable!()
+            }
+        }
+        None => None,
+    };
+
+    let skip_undoc = match args.skip_undoc {
+        Some(su) => {
+            if su.skip_undoc {
+                Some(true)
+            } else if su.no_skip_undoc {
+                Some(false)
+            } else {
+                unreachable!()
+            }
+        }
+        None => None,
+    };
+
     let cli_args_builder = ConfigBuilder::default()
         .with_api_content_path(args.api_content_path)
         .with_site_root(args.site_root)
         .with_pkg_path(args.pkg_path)
-        .with_skip_undoc(if args.skip_undoc { Some(true) } else { None })
-        .with_skip_private(if args.skip_private { Some(true) } else { None })
+        .with_skip_undoc(skip_undoc)
+        .with_skip_private(skip_private)
         .with_exclude(args.exclude)
         .with_ssg(args.ssg);
 
     config_builder = config_builder.merge(cli_args_builder);
 
-    config_builder.build()
+    Ok(config_builder)
 }
 
 pub fn discover_config_file(arg_config_path: Option<PathBuf>) -> Option<PathBuf> {
@@ -74,9 +98,37 @@ pub fn discover_config_file(arg_config_path: Option<PathBuf>) -> Option<PathBuf>
         .find(|candidate| candidate.exists() && candidate.is_file())
 }
 
+#[derive(Args, PartialEq, Eq, Debug)]
+#[group(multiple = false)]
+pub struct SkipPrivate {
+    /// Skip generating pages for private objects (name starts with `_`)
+    /// conflicts with --no-skip-private
+    #[arg(long)]
+    skip_private: bool,
+
+    /// Generate pages for private objects (name starts with `_`)
+    /// conflicts with --skip-private
+    #[arg(long)]
+    no_skip_private: bool,
+}
+
+#[derive(Args, PartialEq, Eq, Debug)]
+#[group(multiple = false)]
+pub struct SkipUndoc {
+    /// Skip generating pages for undocumented objects
+    /// conflicts with --skip-undoc
+    #[arg(long)]
+    skip_undoc: bool,
+
+    /// Generate pages for undocumented objects
+    /// conflicts with --no-skip-undoc
+    #[arg(long)]
+    no_skip_undoc: bool,
+}
+
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
-pub struct Args {
+pub struct CliArgs {
     #[command(flatten)]
     pub verbose: Verbosity,
 
@@ -96,13 +148,11 @@ pub struct Args {
     #[arg(long, short)]
     pub config_file: Option<PathBuf>,
 
-    /// Do not render undocumented functions, classes or modules
-    #[arg(long, default_value_t = false)]
-    pub skip_undoc: bool,
+    #[command(flatten)]
+    pub skip_undoc: Option<SkipUndoc>,
 
-    /// Do not render private functions, classes or modules (who's name start with _)
-    #[arg(long, default_value_t = false)]
-    pub skip_private: bool,
+    #[command(flatten)]
+    pub skip_private: Option<SkipPrivate>,
 
     /// Any files that should be excluded, can be file or directories and specific multiple times but currently globs are not supported
     #[arg(short, long)]
@@ -147,20 +197,39 @@ mod tests {
 
     #[test]
     fn test_args_defaults() -> Result<()> {
-        let args = Args::parse_from(["snakedown"]);
+        let args = CliArgs::parse_from(["snakedown"]);
         assert!(args.pkg_path.is_none());
         assert!(args.site_root.is_none());
         assert!(args.api_content_path.is_none());
-        assert!(!args.skip_undoc);
-        assert!(!args.skip_private);
+        assert_eq!(args.skip_undoc, None);
+        assert_eq!(args.skip_private, None);
         assert!(args.exclude.is_none());
         assert!(args.ssg.is_none());
         Ok(())
     }
 
     #[test]
+    fn test_args_negative_flags() -> Result<()> {
+        let args = CliArgs::parse_from(["snakedown", "--no-skip-undoc", "--no-skip-private"]);
+        assert_eq!(
+            args.skip_undoc,
+            Some(SkipUndoc {
+                skip_undoc: false,
+                no_skip_undoc: true
+            })
+        );
+        assert_eq!(
+            args.skip_private,
+            Some(SkipPrivate {
+                skip_private: false,
+                no_skip_private: true
+            })
+        );
+        Ok(())
+    }
+    #[test]
     fn test_args_all_flags() -> Result<()> {
-        let args = Args::parse_from([
+        let args = CliArgs::parse_from([
             "snakedown",
             "src/pkg",
             "dist",
@@ -182,8 +251,20 @@ mod tests {
             args.api_content_path,
             Some(PathBuf::from("section1/section2/api"))
         );
-        assert!(args.skip_undoc);
-        assert!(args.skip_private);
+        assert_eq!(
+            args.skip_undoc,
+            Some(SkipUndoc {
+                skip_undoc: true,
+                no_skip_undoc: false
+            })
+        );
+        assert_eq!(
+            args.skip_private,
+            Some(SkipPrivate {
+                skip_private: true,
+                no_skip_private: false
+            })
+        );
         assert_eq!(
             args.exclude,
             Some(vec![
@@ -200,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_args_exclude_short_flag() -> Result<()> {
-        let args = Args::parse_from(["mybin", "-e", "excluded"]);
+        let args = CliArgs::parse_from(["mybin", "-e", "excluded"]);
         assert_eq!(args.exclude, Some(vec![PathBuf::from("excluded")]));
         Ok(())
     }
