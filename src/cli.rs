@@ -129,19 +129,22 @@ pub struct SkipUndoc {
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 pub struct CliArgs {
-    #[command(flatten)]
-    pub verbose: Verbosity,
+    #[command(subcommand)]
+    pub subcommand: Option<SubCommand>,
 
     /// The path of the root of the package
+    #[arg(long, short)]
     pub pkg_path: Option<PathBuf>,
 
     /// The root of the site. The output will be placed in a subfolder of the content folder in
     /// this folder. `docs` by default
+    #[arg(long, short)]
     pub site_root: Option<PathBuf>,
 
     /// The path to where the output should be placed relative to the site_root
     /// output will specifically be placed in `./<site_root>/<api_content_path>/`
     /// `api/` by default. If you want the output to be the site root set this to the empty string
+    #[arg(long, short)]
     pub api_content_path: Option<PathBuf>,
 
     /// The path to the configuration file
@@ -159,8 +162,11 @@ pub struct CliArgs {
     pub exclude: Option<Vec<PathBuf>>,
 
     /// What format to render the front matter in, (zola, hugo, plain markdown, etc.)
-    #[arg(short, long, value_enum)]
+    #[arg(long, value_enum)]
     pub ssg: Option<SSG>,
+
+    #[command(flatten)]
+    pub verbose: Verbosity,
 }
 
 #[cfg(test)]
@@ -231,8 +237,11 @@ mod tests {
     fn test_args_all_flags() -> Result<()> {
         let args = CliArgs::parse_from([
             "snakedown",
+            "-p",
             "src/pkg",
+            "-s",
             "dist",
+            "-a",
             "section1/section2/api",
             "--skip-undoc",
             "--skip-private",

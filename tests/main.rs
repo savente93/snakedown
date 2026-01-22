@@ -11,7 +11,9 @@ fn test_cli_with_all_options() -> Result<()> {
     let tempdir = tempdir()?;
 
     let mut cmd = cargo_bin_cmd!();
-    cmd.arg("tests/test_pkg")
+    cmd.arg("-p")
+        .arg("tests/test_pkg")
+        .arg("-s")
         .arg(tempdir.path())
         .arg("--skip-undoc")
         .arg("--skip-private")
@@ -40,7 +42,9 @@ fn test_cli_with_zola() -> Result<()> {
         .assert();
 
     let mut cmd = cargo_bin_cmd!();
-    cmd.arg("tests/test_pkg")
+    cmd.arg("-p")
+        .arg("tests/test_pkg")
+        .arg("-s")
         .arg(&target_dir)
         .arg("--skip-undoc")
         .arg("--skip-private")
