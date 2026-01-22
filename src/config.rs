@@ -66,21 +66,6 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     pub fn init_with_defaults(mut self) -> Self {
-        let mut externals = HashMap::new();
-        externals.insert(
-            "builtins".to_string(),
-            ExternalIndex::new(
-                Some("Python".to_string()),
-                "https://docs.python.org/3/".to_string(),
-            ),
-        );
-        externals.insert(
-            "numpy".to_string(),
-            ExternalIndex::new(
-                Some("Numpy".to_string()),
-                "https://numpy.org/doc/stable/".to_string(),
-            ),
-        );
         self = self
             .with_site_root(Some(PathBuf::from("docs")))
             .with_api_content_path(Some(PathBuf::from("api/")))
@@ -89,7 +74,7 @@ impl ConfigBuilder {
             .with_pkg_path(Some(PathBuf::from(".")))
             .with_exclude(Some(Vec::new()))
             .with_ssg(Some(SSG::Markdown))
-            .with_externals(Some(externals))
+            .with_externals(Some(predefined_externals()))
             .with_render_config(Some(RenderConfig {
                 zola: Some(ZolaConfig {
                     use_shortcodes: true,
@@ -283,6 +268,39 @@ pub struct PyProjectToml {
 #[serde(rename_all = "kebab-case")]
 pub struct Tool {
     snakedown: Option<ConfigBuilder>,
+}
+
+pub fn predefined_externals() -> HashMap<String, ExternalIndex> {
+    let mut externals = HashMap::new();
+    externals.insert(
+        "builtins".to_string(),
+        ExternalIndex::new(
+            Some("Python builtins".to_string()),
+            "https://docs.python.org/3/".to_string(),
+        ),
+    );
+    externals.insert(
+        "numpy".to_string(),
+        ExternalIndex::new(
+            Some("Numpy".to_string()),
+            "https://numpy.org/doc/stable/".to_string(),
+        ),
+    );
+    externals.insert(
+        "pandas".to_string(),
+        ExternalIndex::new(
+            Some("Pandas".to_string()),
+            "https://pandas.pydata.org/pandas-docs/stable".to_string(),
+        ),
+    );
+    externals.insert(
+        "scipy".to_string(),
+        ExternalIndex::new(
+            Some("Scipy".to_string()),
+            "https://docs.scipy.org/doc/scipy".to_string(),
+        ),
+    );
+    externals
 }
 
 #[cfg(test)]
