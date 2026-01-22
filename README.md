@@ -52,10 +52,10 @@ Currently, SnakeDown is solidly in the MVP state. As of `v0.2.0` it should be us
 - [x] Do reference linking inside the docs
 - [x] Do reference linking to external docs
 - [ ] Benchmarking & optimisation
+- [ ] Support for pre-executed Jupyter Notebooks 
 - [ ] QoL features like:
     - [ ] a file watcher
-    - [ ] `snakedown init` to setup `snakedown.toml` etc.
-    - [ ] `snakedown doctor` to help diagnose problems
+    - [x] `snakedown init` to setup `snakedown.toml` etc.
     - [ ] fuzzy search to suggest close references in case of typos
     - [ ] A `view on <SCM>` button
     - [ ] possibly bibtex integration for pandoc style citations
