@@ -1,33 +1,12 @@
+mod verbosity;
+
 use clap::Args;
 use color_eyre::Result;
 use std::path::PathBuf;
 
-use clap::Parser;
-use clap_verbosity_flag::{LogLevel, Verbosity, VerbosityFilter};
+use clap::{Parser, Subcommand};
+use clap_verbosity_flag::Verbosity;
 use snakedown::{config::ConfigBuilder, render::SSG};
-
-#[allow(dead_code)]
-pub struct CustomLogLevel {}
-
-impl LogLevel for CustomLogLevel {
-    fn default_filter() -> VerbosityFilter {
-        VerbosityFilter::Error
-    }
-    fn quiet_help() -> Option<&'static str> {
-        Some("suppress all logging output")
-    }
-    fn quiet_long_help() -> Option<&'static str> {
-        Some("Suppress the logging output of the application, including errors.")
-    }
-    fn verbose_help() -> Option<&'static str> {
-        Some("Increase verbosity of the logging (can be specified multiple times).")
-    }
-    fn verbose_long_help() -> Option<&'static str> {
-        Some(
-            "Increase the logging verbosity of the application by one level (ERROR, WARN, INFO, DEBUG, TRACE)",
-        )
-    }
-}
 
 pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
     let mut config_builder = ConfigBuilder::default();
@@ -126,6 +105,12 @@ pub struct SkipUndoc {
     no_skip_undoc: bool,
 }
 
+#[derive(Subcommand, Clone)]
+pub enum SubCommand {
+    /// Interactively generate a new config
+    Init,
+}
+
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 pub struct CliArgs {
@@ -172,8 +157,10 @@ pub struct CliArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cli::verbosity::CustomLogLevel;
     use clap::Parser;
     use clap_verbosity_flag::log::Level;
+    use clap_verbosity_flag::{LogLevel, VerbosityFilter};
     use color_eyre::Result;
 
     #[test]

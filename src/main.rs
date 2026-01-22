@@ -4,7 +4,7 @@ use tracing::subscriber::set_global_default;
 
 mod cli;
 
-use crate::cli::{CliArgs, resolve_runtime_config};
+use crate::cli::{CliArgs, SubCommand, resolve_runtime_config};
 use clap::Parser;
 
 #[allow(clippy::missing_errors_doc)]
@@ -19,13 +19,21 @@ async fn main() -> Result<()> {
 
     set_global_default(subscriber)?;
 
+    let command = args.subcommand.clone();
+
     tracing::debug_span!("resolving runtime config");
     let default_config = ConfigBuilder::default().init_with_defaults();
     let runtime_config = resolve_runtime_config(args)?;
 
     let config = default_config.merge(runtime_config).build()?;
 
-    render_docs(config).await?;
+    match command {
+        Some(SubCommand::Init) => println!("starting init!"),
+
+        None => {
+            let _ = render_docs(config).await?;
+        }
+    };
 
     Ok(())
 }
