@@ -1,0 +1,60 @@
+---
+name: Bug Report
+description: Report incorrect behavior in the HydroMT library
+labels: [Bug, Needs triage]
+
+body:
+  - type: markdown
+    attributes:
+    value: |
+      Thanks for taking the time to fill out this bug report! By providing more specific and detailed information you can increase the chances of this getting addressed sooner. Please note that this is only intended for bug reports for snakedown itself. If for exapmle, a theme is not displaying something properly but the output is not wrong, please open the issue in the relevant repo instead. 
+  - type: input
+    attributes:
+      label: Snakedown Version
+      description: Output of `snakedown --version`
+      validations:
+        required: true
+  - type: dropdown
+    attributes:
+    label: Version
+    description: Which SSG were you using when you observed the problem? 
+    multiple: false
+    options:
+      - N/A
+      - Zola
+      - Plain Markdown
+    default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: current-behaviour
+    attributes:
+      description: >
+        What were you doing when you observed the problem, and what happend that you think should have happened?
+      label: Error description
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      description: >
+        What would you want to happen instead?
+      label: Desired behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      description: >
+        Paste any relevant logs here (you can show debug logs with -vvv)
+      label: Logs
+    validations:
+      required: false
+  - type: input
+    id: repo
+    attributes:
+      description: >
+        link to repo where the problem can be observed
+      label: Optionally, you can priovide a link to a public repo where the issue can be observed
+    validations:
+      required: false
