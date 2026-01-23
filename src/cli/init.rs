@@ -86,7 +86,7 @@ pub fn wizard() -> Result<ConfigBuilder> {
         .item(SSG::Markdown)
         .interact()?;
 
-    // we only allow options that we knwo so this get is guaranteed to
+    // we only allow options that we know so this get is guaranteed to
     // return Some
     #[allow(clippy::unwrap_used)]
     let ssg_choice = ssg_choices.get(ssg_choice_index).unwrap();
