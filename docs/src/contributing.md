@@ -96,7 +96,11 @@ In case you would like to install the tools yourself, below is a list of tools w
 
 Also keep in mind not all our rules have to be met at every single stage. It is totally allowed to iterate/prototype until you are happy with things, and then clean up after!
 
-### Setting up a dev environment
+### Troubleshooting
+
+#### My unit tests are passing but the integration test is failing, what's going on?
+
+Make sure that you've initialized the git submodules. We use submodules to include the supported themes for the SSGs in our repo. If you've already cloned the repo, you can do so by executing the command `git submodule update --recursive --init`. If you haven't you can make sure this is done correctly by cloning with the `--recursive` option like so: `git clone --recursive https://github.com/savente93/snakedown`
 
 ##  Publishing
 
