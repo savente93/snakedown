@@ -428,4 +428,20 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn can_deserialize_serialized_config() -> Result<()> {
+        let config = ConfigBuilder::default().init_with_defaults();
+
+        let tmp_dir = TempDir::new()?;
+        let path = tmp_dir.join("generated_config.toml");
+
+        config.clone().to_snakedown_toml(&path)?;
+
+        let deserialized = ConfigBuilder::from_path(&path)?;
+
+        assert_eq!(config, deserialized);
+
+        Ok(())
+    }
 }

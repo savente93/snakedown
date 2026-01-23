@@ -26,7 +26,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, Display, ValueEnum, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "lowercase"))]
+#[serde(rename_all(serialize = "PascalCase"))]
 pub enum SSG {
     Markdown,
     Zola,
