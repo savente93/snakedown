@@ -9,8 +9,8 @@ exclude          = []
 [externals]
 builtins = { name = "Python builtins", url = "https://docs.python.org/3/" }
 numpy    = { name = "Numpy", url = "https://numpy.org/doc/stable/" }
-scipy    = { name = "Scipy", url =  "https://docs.scipy.org/doc/scipy/"}
-pandas    = { name = "Pandas", url = "https://pandas.pydata.org/pandas-docs/stable/" }
+scipy    = { name = "Scipy", url = "https://docs.scipy.org/doc/scipy/" }
+pandas   = { name = "Pandas", url = "https://pandas.pydata.org/pandas-docs/stable/" }
 
 
 [render.zola]

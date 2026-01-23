@@ -62,7 +62,7 @@ lint = { depends-on = [
 taplo-fix = "taplo fmt **/*.toml"
 rust-fmt-fix = "cargo fmt --all"
 typos-fix = "typos -w ."
-clippy-fix = "cargo clippy --fix"
+clippy-fix = "cargo clippy --fix --allow-dirty"
 lint-fix = { depends-on = [
   "rust-fmt-fix",
   "typos-fix",
