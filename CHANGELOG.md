@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## [0.3.0](https://github.com/savente93/snakedown/compare/v0.2.0...v0.3.0) - 2026-01-23
+
+### Added
+
+- add initial init wizard
+- add numpy and pandas as predefined externals
+- introduce negative flags
+- adopt pixi in favour of just
+
+### Fixed
+
+- make sure we can deserialize generated configs
+- don't overwrite existing config on init
+- move cli into it's own subcrate
+- [**breaking**] change positional arguments to flags
+
+### Other
+
+- add faq about failing system test
+- add feature-request template
+- add bug report template
+- add PR template
+- update roadmap in README
+- *(deps)* bump JamesIves/github-pages-deploy-action
+- *(deps)* bump actions/checkout from 4 to 6
+
 ## [0.2.0](https://github.com/savente93/snakedown/compare/v0.1.0...v0.2.0) - 2026-01-11
 
 ### Added
