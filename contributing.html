@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-c20dcb0b.js";
+            window.path_to_searchindex_js = "searchindex-8d4335c1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-6f6e8175.js"></script>
@@ -252,7 +252,9 @@ feel free to ask us for help! We might even suggest where it would work to be la
 </li>
 </ul>
 <p>Also keep in mind not all our rules have to be met at every single stage. It is totally allowed to iterate/prototype until you are happy with things, and then clean up after!</p>
-<h3 id="setting-up-a-dev-environment"><a class="header" href="#setting-up-a-dev-environment">Setting up a dev environment</a></h3>
+<h3 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h3>
+<h4 id="my-unit-tests-are-passing-but-the-integration-test-is-failing-whats-going-on"><a class="header" href="#my-unit-tests-are-passing-but-the-integration-test-is-failing-whats-going-on">My unit tests are passing but the integration test is failing, what’s going on?</a></h4>
+<p>Make sure that you’ve initialized the git submodules. We use submodules to include the supported themes for the SSGs in our repo. If you’ve already cloned the repo, you can do so by executing the command <code>git submodule update --recursive --init</code>. If you haven’t you can make sure this is done correctly by cloning with the <code>--recursive</code> option like so: <code>git clone --recursive https://github.com/savente93/snakedown</code></p>
 <h2 id="publishing"><a class="header" href="#publishing">Publishing</a></h2>
 <p>For this project we have a <a href="https://release-plz.dev/docs"><code>release-plz</code></a> action setup. This gets updated automatically, and to release to all the places we distribute too all you have to do is edit and merge that release PR.</p>
 <h2 id="acknolwegements"><a class="header" href="#acknolwegements">Acknolwegements</a></h2>
