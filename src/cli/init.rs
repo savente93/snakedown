@@ -19,9 +19,7 @@ pub fn wizard() -> Result<ConfigBuilder> {
 
     println!("Welcome to Snakedown!");
     println!("Please answer a few questions to get started quickly.");
-    println!(
-        "Any choices made can be changed by modifying the `snakedown.toml` or `pyproject.toml` file later.",
-    );
+    println!("Any choices made can be changed by modifying the `snakedown.toml` file later.",);
 
     let mut out = ConfigBuilder::default();
 
