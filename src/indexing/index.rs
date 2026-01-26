@@ -4,6 +4,7 @@ use crate::{
         python::{
             class::ClassDocumentation,
             function::FunctionDocumentation,
+            jupyter::parse_notebook_file,
             module::{ModuleDocumentation, extract_module_documentation},
             utils::parse_python_file,
         },
@@ -12,10 +13,12 @@ use crate::{
 };
 use color_eyre::{Report, Result, eyre::eyre};
 use edit_distance::edit_distance;
+use nbformat::v4::Cell;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
+use tracing::warn;
 use url::Url;
 
 // TODO: I think the winning strategy here is to start with a `RawIndex` that is more or less the
@@ -32,6 +35,7 @@ pub struct RawIndex {
     pub pkg_name: String,
     pub internal_object_store: HashMap<String, ObjectDocumentation>,
     pub external_object_store: HashMap<String, Url>,
+    pub notebook_store: HashMap<String, Vec<Cell>>,
     pub skip_undoc: bool,
     pub skip_private: bool,
     pub pkg_root: PathBuf,
@@ -48,6 +52,7 @@ impl RawIndex {
             pkg_name,
             internal_object_store: HashMap::new(),
             external_object_store: HashMap::new(),
+            notebook_store: HashMap::new(),
             pkg_root,
             skip_undoc,
             skip_private,
@@ -106,6 +111,25 @@ impl RawIndex {
                 Err(e)
             }
         }
+    }
+
+    pub fn index_notebook(&mut self, path: &Path) -> Result<()> {
+        let notebook_name = path
+            .file_stem()
+            .ok_or(eyre!("Could not deternime file stem"))?
+            .to_str()
+            .ok_or(eyre!("Could not convert file stem to string"))?
+            .to_string();
+        let notebook_contents = parse_notebook_file(path)?;
+
+        if self
+            .notebook_store
+            .insert(notebook_name.clone(), notebook_contents)
+            .is_some()
+        {
+            warn!("overwriting notbook called {notebook_name}")
+        }
+        Ok(())
     }
 
     pub fn validate_references(&self) -> Result<(), Vec<Report>> {

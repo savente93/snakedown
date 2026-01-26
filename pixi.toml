@@ -32,10 +32,19 @@ doc-open = { depends-on = ["cargo-doc-open", "book-serve"] }
 zola = ">=0.22.0,<0.23"
 
 [feature.zola.tasks]
-clean-zola-output    = "rm -rf tests/zola_test_site/content/api"
-zola-serve-test-site = "zola --root tests/zola_test_site serve"
-snakedown-build-zola = "cargo r -- tests/test_pkg tests/zola_test_site api --ssg zola -e tests/test_pkg/excluded_file.py -e tests/test_pkg/excluded_module/ -vvv"
+clean-zola-output     = "rm -rf tests/zola_test_site/content/api"
+zola-serve-test-site  = "zola --root tests/zola_test_site serve"
+zola-serve-test-build = "zola --root tests/zola_test_site build"
+snakedown-build-zola  = "cargo r -- -p tests/test_pkg -s tests/zola_test_site -a api --notebooks-content-path user-guide -n tests/test_notebooks --ssg zola -e tests/test_pkg/excluded_file.py -e tests/test_pkg/excluded_module/ -e miss_spelled_ref.py -vvv"
 
+zola-build = { depends-on = [
+  "clean-zola-output",
+  "snakedown-build-zola",
+  "zola-serve-test-build",
+] }
+
+zb = { depends-on = ["zola-build"] }
+z = { depends-on = ["zola"] }
 zola = { depends-on = [
   "clean-zola-output",
   "snakedown-build-zola",

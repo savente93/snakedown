@@ -38,6 +38,7 @@ async fn main() -> Result<()> {
             tracing::debug_span!("resolving runtime config");
             let default_config = ConfigBuilder::default().init_with_defaults();
             let runtime_config = resolve_runtime_config(args)?;
+            tracing::debug!("runtime config: {:?}", runtime_config);
 
             let config_builder = default_config.merge(runtime_config);
             let config = config_builder.build()?;

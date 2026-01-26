@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
     value: |
-      Thanks for taking the time to fill out this bug report! By providing more specific and detailed information you can increase the chances of this getting addressed sooner. Please note that this is only intended for bug reports for snakedown itself. If for exapmle, a theme is not displaying something properly but the output is not wrong, please open the issue in the relevant repo instead. 
+      Thanks for taking the time to fill out this bug report! By providing more specific and detailed information you can increase the chances of this getting addressed sooner. Please note that this is only intended for bug reports for snakedown itself. If for example, a theme is not displaying something properly but the output is not wrong, please open the issue in the relevant repo instead.
   - type: input
     attributes:
       label: Snakedown Version
@@ -17,7 +17,7 @@ body:
   - type: dropdown
     attributes:
     label: Version
-    description: Which SSG were you using when you observed the problem? 
+    description: Which SSG were you using when you observed the problem?
     multiple: false
     options:
       - N/A
@@ -30,7 +30,7 @@ body:
     id: current-behaviour
     attributes:
       description: >
-        What were you doing when you observed the problem, and what happend that you think should have happened?
+        What were you doing when you observed the problem, and what happened that you think should have happened?
       label: Error description
     validations:
       required: true
