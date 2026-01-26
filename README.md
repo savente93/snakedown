@@ -52,7 +52,7 @@ Currently, SnakeDown is solidly in the MVP state. As of `v0.2.0` it should be us
 - [x] Do reference linking inside the docs
 - [x] Do reference linking to external docs
 - [ ] Benchmarking & optimisation
-- [ ] Support for pre-executed Jupyter Notebooks
+- [x] Support for pre-executed Jupyter Notebooks
 - [ ] QoL features like:
     - [ ] a file watcher
     - [x] `snakedown init` to setup `snakedown.toml` etc.
@@ -61,6 +61,14 @@ Currently, SnakeDown is solidly in the MVP state. As of `v0.2.0` it should be us
     - [ ] possibly bibtex integration for pandoc style citations
 
 ## FAQ
+
+### Why is my Jupyter notebook output not showing up?
+
+The Jupyter format can actually output a surprisng amount of different kinds of output, many of those we didn't have an example case for, and as a general rule we don't implement things we can't verify the use of. However, if you have something that produces output we don't support and are willing to share (a simplified version) so we can make sure it works properly, please open a feature request. The media types that our dependency support are listed [here](https://docs.rs/jupyter-protocol/1.0.0/jupyter_protocol/media/enum.MediaType.html).
+
+### Can I use whatever theme I like?
+
+Yes. All renderers should have a mode that will generate output without any decorations that out themes will use to style it a certain way so that you can use it in other themes. However, if you do this we cannot guarantee that it will look correct.
 
 ### Is SnakeDown dead?
 

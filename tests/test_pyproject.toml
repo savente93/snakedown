@@ -139,13 +139,15 @@ core = "hydromt.data_catalog.uri_resolvers"
 
 [tool.snakedown]
 
-api_content_path = "foo/"
-site_root        = "bar"
-pkg_path         = "hydromt"
-skip_undoc       = true
-skip_private     = false
-ssg              = "Zola"
-exclude          = []
+api_content_path      = "foo/"
+site_root             = "bar"
+notebook_path         = "examples"
+notebook_content_path = "user-guide"
+pkg_path              = "hydromt"
+skip_undoc            = true
+skip_private          = false
+ssg                   = "Zola"
+exclude               = []
 
 [tool.snakedown.externals]
 builtins = { name = "Python", url = "https://docs.python.org/3/" }

@@ -34,12 +34,14 @@ impl ExternalIndex {
 pub struct Config {
     pub site_root: PathBuf,
     pub api_content_path: PathBuf,
+    pub notebook_content_path: Option<PathBuf>,
     pub pkg_path: PathBuf,
     pub skip_undoc: bool,
     pub skip_private: bool,
     pub renderer: Box<dyn Renderer>,
     pub exclude: Vec<PathBuf>,
     pub externals: HashMap<String, ExternalIndex>,
+    pub notebook_path: Option<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
@@ -56,6 +58,7 @@ pub struct ZolaConfig {
 pub struct ConfigBuilder {
     site_root: Option<PathBuf>,
     api_content_path: Option<PathBuf>,
+    notebook_content_path: Option<PathBuf>,
     pkg_path: Option<PathBuf>,
     skip_undoc: Option<bool>,
     skip_private: Option<bool>,
@@ -63,6 +66,7 @@ pub struct ConfigBuilder {
     render: Option<RenderConfig>,
     exclude: Option<Vec<PathBuf>>,
     externals: Option<HashMap<String, ExternalIndex>>,
+    notebook_path: Option<PathBuf>,
 }
 
 impl ConfigBuilder {
@@ -138,6 +142,18 @@ impl ConfigBuilder {
         }
         self
     }
+    pub fn with_notebook_content_path(mut self, notebook_content_path: Option<PathBuf>) -> Self {
+        if notebook_content_path.is_some() {
+            self.notebook_content_path = notebook_content_path;
+        }
+        self
+    }
+    pub fn with_notebook_path(mut self, notebook_path: Option<PathBuf>) -> Self {
+        if notebook_path.is_some() {
+            self.notebook_path = notebook_path;
+        }
+        self
+    }
     pub fn add_external(&mut self, key: String, name: Option<String>, link: String) -> Result<()> {
         if self.externals.is_none() {
             self.externals = Some(HashMap::new());
@@ -184,6 +200,7 @@ impl ConfigBuilder {
 
         Ok(Config {
             api_content_path: self.api_content_path.unwrap_or(PathBuf::from("api/")),
+            notebook_content_path: self.notebook_content_path,
             site_root: self.site_root.unwrap_or(PathBuf::from("docs")),
             pkg_path: self.pkg_path.unwrap_or(PathBuf::from(".")),
             skip_undoc: self.skip_undoc.unwrap_or(true),
@@ -191,6 +208,7 @@ impl ConfigBuilder {
             exclude: self.exclude.unwrap_or_default(),
             renderer,
             externals: external_linkings,
+            notebook_path: self.notebook_path,
         })
     }
 
@@ -224,6 +242,13 @@ impl ConfigBuilder {
 
         if other.ssg.is_some() {
             self.ssg = other.ssg
+        }
+
+        if other.notebook_path.is_some() {
+            self.notebook_path = other.notebook_path
+        }
+        if other.notebook_content_path.is_some() {
+            self.notebook_content_path = other.notebook_content_path
         }
 
         if let Some(v) = other.exclude {
@@ -333,6 +358,8 @@ mod test {
             .with_api_content_path(Some(PathBuf::from("foo/")))
             .with_pkg_path(Some(PathBuf::from("hydromt")))
             .with_skip_undoc(Some(true))
+            .with_notebook_content_path(Some(PathBuf::from("user-guide")))
+            .with_notebook_path(Some(PathBuf::from("examples")))
             .with_skip_private(Some(false))
             .with_exclude(Some(vec![]))
             .with_ssg(Some(SSG::Zola));
@@ -368,7 +395,7 @@ mod test {
     fn config_merge_other_takes_precedent() -> Result<()> {
         let mut first = ConfigBuilder::default()
             .with_pkg_path(Some(PathBuf::from(".")))
-            .with_ssg(Some(SSG::Markdown));
+            .with_ssg(Some(SSG::Zola));
 
         first.exclude_path(PathBuf::from("asdf"));
         first.add_external(

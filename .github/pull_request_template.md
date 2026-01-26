@@ -13,4 +13,3 @@ Explain how you addressed the bug/feature request, what choices you made and why
 - [ ] Tests & lints hooks pass
 - [ ] Updated documentation (if applicable)
 - [ ] History of branch is cleaned up
-

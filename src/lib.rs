@@ -9,7 +9,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::config::Config;
-use crate::fs::crawl_package;
+use crate::fs::{crawl_notebooks, crawl_package};
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
 use crate::indexing::external::cache::init_cache;
 use crate::indexing::external::fetch::fill_cache;
@@ -18,7 +18,7 @@ use crate::parsing::sphinx::inv_file::parse_objects_inv_file;
 use crate::parsing::sphinx::types::{ExternalSphinxRef, StdRole};
 use crate::render::formats::Renderer;
 pub use crate::render::render_module;
-use crate::render::render_object;
+use crate::render::{jupyter::render_notebook, render_object};
 use parsing::sphinx::types::SphinxType;
 
 use color_eyre::Result;
@@ -28,7 +28,7 @@ use url::Url;
 
 pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
     let absolute_pkg_path = config.pkg_path.canonicalize()?;
-    let out_path = if let Some(content_path) = config.renderer.content_path() {
+    let out_api_path = if let Some(content_path) = config.renderer.content_path() {
         config
             .site_root
             .join(content_path)
@@ -36,6 +36,7 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
     } else {
         config.site_root.join(&config.api_content_path)
     };
+
     let errored = vec![];
 
     let mut ctx = Context::new();
@@ -75,6 +76,11 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
         config.exclude.clone(),
     )?;
 
+    if let Some(nb_path) = &config.notebook_path {
+        tracing::debug!("crawling notebooks");
+        crawl_notebooks(&mut index, nb_path)?;
+    }
+
     match index.validate_references() {
         Ok(_) => Ok(()),
         Err(errors) => Err(eyre!(
@@ -86,20 +92,62 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
 
     index.pre_process(&config.renderer, &config.api_content_path)?;
 
-    create_dir_all(&out_path)?;
+    create_dir_all(&out_api_path)?;
 
     for (key, object) in index.internal_object_store.iter() {
-        let file_path = out_path.join(key).with_added_extension("md");
+        let file_path = out_api_path.join(key).with_added_extension("md");
         let rendered = render_object(object, key.clone(), &config.renderer, &ctx)?;
         let rendered_trimmed = rendered.trim_start();
         let mut file = File::create(file_path)?;
         file.write_all(rendered_trimmed.as_bytes())?;
     }
 
+    if let Some(notebook_path) = &config.notebook_path {
+        let out_nb_path = if let Some(content_path) = config.renderer.content_path() {
+            config.site_root.clone().join(content_path).join(
+                config
+                    .notebook_content_path
+                    .clone()
+                    .unwrap_or(notebook_path.clone()),
+            )
+        } else {
+            config.site_root.clone().join(
+                config
+                    .notebook_content_path
+                    .clone()
+                    .unwrap_or(notebook_path.clone()),
+            )
+        };
+        create_dir_all(&out_nb_path)?;
+        for (key, cells) in index.notebook_store.iter() {
+            let dir_path = out_nb_path.join(key);
+            let file_path = dir_path.clone().join("index").with_added_extension("md");
+            let mut rendered = render_notebook(
+                dir_path
+                    .file_stem()
+                    .map(|p| p.display().to_string())
+                    .as_deref(),
+                cells,
+                &config.renderer,
+            )?;
+            // some tools insert an extra EOL at the end of the file
+            if !rendered.text.ends_with("\n") {
+                rendered.text.push('\n');
+            }
+            create_dir_all(dir_path.clone())?;
+            let mut file = File::create(file_path)?;
+            file.write_all(rendered.text.as_bytes())?;
+            for img in rendered.images {
+                let mut img_file = File::create(dir_path.join(img.name))?;
+                img_file.write_all(&img.data)?;
+            }
+        }
+    }
+
     if let Some((index_file_path, index_file_content)) =
         &config.renderer.index_file(Some("API".to_string()))
     {
-        let mut file = File::create(out_path.join(index_file_path))?;
+        let mut file = File::create(out_api_path.join(index_file_path))?;
         file.write_all(index_file_content.as_bytes())?;
     }
 
@@ -123,6 +171,7 @@ fn should_include_reference(r: &ExternalSphinxRef) -> bool {
 #[cfg(test)]
 mod test {
 
+    use std::ffi::OsString;
     use std::path::{Path, PathBuf};
 
     use crate::config::ConfigBuilder;
@@ -203,7 +252,11 @@ mod test {
     /// Recursively collects all files and directories with paths relative to `base`.
     fn collect_files(base: &Path) -> Result<std::collections::HashMap<PathBuf, PathBuf>> {
         let mut map = std::collections::HashMap::new();
-        for entry in WalkDir::new(base).into_iter().filter_map(Result::ok) {
+        for entry in WalkDir::new(base)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|p| p.path().extension() != Some(&OsString::from("png")))
+        {
             let path = entry.path();
             let rel = path.strip_prefix(base)?;
             map.insert(rel.to_path_buf(), path.to_path_buf());
@@ -249,15 +302,19 @@ mod test {
     async fn render_test_pkg_docs_full() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
-        let expected_result_dir = PathBuf::from("tests/rendered_full");
-        let api_content_path = PathBuf::from("");
+        let expected_api_result_dir = PathBuf::from("tests/rendered_full");
+        let expected_notebooks_result_dir = PathBuf::from("tests/rendered_notebooks/");
+        let api_content_path = PathBuf::from("api");
+        let notebook_content_path = PathBuf::from("notebooks");
         let mut config_builder = ConfigBuilder::default()
             .init_with_defaults()
             .with_pkg_path(Some(test_pkg_dir))
-            .with_api_content_path(Some(api_content_path))
+            .with_api_content_path(Some(api_content_path.clone()))
+            .with_notebook_content_path(Some(notebook_content_path.clone()))
             .with_site_root(Some(temp_dir.to_path_buf()))
             .with_skip_undoc(Some(false))
             .with_skip_private(Some(false))
+            .with_notebook_path(Some(PathBuf::from("tests/test_notebooks")))
             .with_ssg(Some(crate::render::SSG::Markdown));
         config_builder.exclude_paths(vec![
             PathBuf::from("test_pkg/excluded_file.py"),
@@ -274,7 +331,14 @@ mod test {
 
         render_docs(config).await?;
 
-        assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
+        assert_dir_trees_equal(
+            expected_api_result_dir.as_path(),
+            temp_dir.join(api_content_path).as_path(),
+        );
+        assert_dir_trees_equal(
+            expected_notebooks_result_dir.as_path(),
+            temp_dir.join(notebook_content_path).as_path(),
+        );
 
         Ok(())
     }
@@ -282,14 +346,19 @@ mod test {
     async fn render_test_pkg_docs_no_private_no_undoc() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
-        let expected_result_dir = PathBuf::from("tests/rendered_no_private");
-        let api_content_path = PathBuf::from("");
+        let expected_api_result_dir = PathBuf::from("tests/rendered_no_private");
+        let expected_notebooks_result_dir = PathBuf::from("tests/rendered_notebooks/");
+        let notebook_path = PathBuf::from("tests/test_notebooks/");
+        let api_content_path = PathBuf::from("api");
+        let notebook_content_path = PathBuf::from("notebooks/");
         let mut config_builder = ConfigBuilder::default()
             .init_with_defaults()
             .with_pkg_path(Some(test_pkg_dir))
-            .with_api_content_path(Some(api_content_path))
+            .with_api_content_path(Some(api_content_path.clone()))
+            .with_notebook_content_path(Some(notebook_content_path.clone()))
             .with_site_root(Some(temp_dir.to_path_buf()))
             .with_skip_undoc(Some(true))
+            .with_notebook_path(Some(notebook_path))
             .with_ssg(Some(SSG::Markdown))
             .with_skip_private(Some(true));
         config_builder.exclude_paths(vec![
@@ -302,7 +371,14 @@ mod test {
 
         render_docs(config).await?;
 
-        assert_dir_trees_equal(expected_result_dir.as_path(), temp_dir.path());
+        assert_dir_trees_equal(
+            expected_api_result_dir.as_path(),
+            temp_dir.join(api_content_path).as_path(),
+        );
+        assert_dir_trees_equal(
+            expected_notebooks_result_dir.as_path(),
+            temp_dir.join(notebook_content_path).as_path(),
+        );
 
         Ok(())
     }
@@ -318,6 +394,8 @@ mod test {
             .with_api_content_path(Some(api_content_path))
             .with_site_root(Some(temp_dir.to_path_buf()))
             .with_skip_undoc(Some(true))
+            .with_notebook_content_path(None)
+            .with_notebook_path(None)
             .with_ssg(Some(SSG::Markdown))
             .with_skip_private(Some(true));
         config_builder.exclude_paths(vec![
