@@ -1,6 +1,7 @@
 pub mod args;
 pub mod expr;
 pub mod formats;
+pub mod jupyter;
 use color_eyre::Result;
 
 use clap::ValueEnum;

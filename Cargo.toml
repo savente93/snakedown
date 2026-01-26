@@ -19,6 +19,7 @@ path = "src/main.rs"
 name = "snakedown"
 
 [dependencies]
+base64              = "0.22.1"
 clap                = { version = "4", features = ["derive", "unicode", "cargo"] }
 clap-verbosity-flag = { version = "3.0.3", features = ["tracing"] }
 color-eyre          = "0.6"
@@ -26,8 +27,10 @@ console             = "0.16.2"
 dialoguer           = "0.12.0"
 edit-distance       = "2.2.2"
 flate2              = "1.1.2"
+jupyter-protocol    = "1.0.0"
 
 lazy-regex        = "3.4.1"
+nbformat          = "1.0.0"
 pyproject-toml    = "0.13.7"
 reqwest           = { version = "0.12.20", features = ["blocking"] }
 rustpython-parser = "0.4.0"
