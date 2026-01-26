@@ -4,6 +4,7 @@ use crate::{
         python::{
             class::ClassDocumentation,
             function::FunctionDocumentation,
+            jupyter::parse_notebook_file,
             module::{ModuleDocumentation, extract_module_documentation},
             utils::parse_python_file,
         },
@@ -11,6 +12,7 @@ use crate::{
     render::formats::Renderer,
 };
 use color_eyre::{Report, Result, eyre::eyre};
+use nbformat::v4::Cell;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -31,6 +33,7 @@ pub struct RawIndex {
     pub pkg_name: String,
     pub internal_object_store: HashMap<String, ObjectDocumentation>,
     pub external_object_store: HashMap<String, Url>,
+    pub notebook_store: HashMap<String, Vec<Cell>>,
     pub skip_undoc: bool,
     pub skip_private: bool,
     pub pkg_root: PathBuf,
@@ -47,6 +50,7 @@ impl RawIndex {
             pkg_name,
             internal_object_store: HashMap::new(),
             external_object_store: HashMap::new(),
+            notebook_store: HashMap::new(),
             pkg_root,
             skip_undoc,
             skip_private,
@@ -105,6 +109,11 @@ impl RawIndex {
                 Err(e)
             }
         }
+    }
+
+    pub fn index_notebook(&self, path: &Path) -> Result<()> {
+        let notebook_contents = parse_notebook_file(path)?;
+        Ok(())
     }
 
     pub fn validate_references(&self) -> Result<(), Vec<Report>> {

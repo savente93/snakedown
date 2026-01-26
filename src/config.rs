@@ -40,6 +40,7 @@ pub struct Config {
     pub renderer: Box<dyn Renderer>,
     pub exclude: Vec<PathBuf>,
     pub externals: HashMap<String, ExternalIndex>,
+    pub notebook_paths: Vec<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
@@ -63,6 +64,7 @@ pub struct ConfigBuilder {
     render: Option<RenderConfig>,
     exclude: Option<Vec<PathBuf>>,
     externals: Option<HashMap<String, ExternalIndex>>,
+    notebook_paths: Option<Vec<PathBuf>>,
 }
 
 impl ConfigBuilder {

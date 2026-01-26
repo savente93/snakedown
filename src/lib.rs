@@ -75,6 +75,8 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
         config.exclude.clone(),
     )?;
 
+    crawl_notebooks(&mut index, exmaples_path)?;
+
     match index.validate_references() {
         Ok(_) => Ok(()),
         Err(errors) => Err(eyre!(

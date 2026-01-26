@@ -27,6 +27,7 @@ dialoguer           = "0.12.0"
 flate2              = "1.1.2"
 
 lazy-regex        = "3.4.1"
+nbformat = "1.0.0"
 pyproject-toml    = "0.13.7"
 reqwest           = { version = "0.12.20", features = ["blocking"] }
 rustpython-parser = "0.4.0"
