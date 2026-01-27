@@ -11,6 +11,7 @@ use crate::{
     render::formats::Renderer,
 };
 use color_eyre::{Report, Result, eyre::eyre};
+use edit_distance::edit_distance;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -119,11 +120,23 @@ impl RawIndex {
                             .external_object_store
                             .contains_key(&used_ref.fully_qualified_name)
                     {
-                        errors.push(eyre!(
-                            "unknown reference: {}, in object {}",
-                            used_ref.fully_qualified_name,
-                            key
-                        ));
+                        let suggestion =
+                            self.suggest_reference(&used_ref.fully_qualified_name, 5, 5);
+
+                        if let Some(c) = suggestion {
+                            errors.push(eyre!(
+                                "unknown reference: {}, in object {} did you mean {}?",
+                                used_ref.fully_qualified_name,
+                                key,
+                                c
+                            ));
+                        } else {
+                            errors.push(eyre!(
+                                "unknown reference: {}, in object {}",
+                                used_ref.fully_qualified_name,
+                                key,
+                            ));
+                        }
                     }
                 }
             };
@@ -133,6 +146,40 @@ impl RawIndex {
             Ok(())
         } else {
             Err(errors)
+        }
+    }
+
+    fn suggest_reference(
+        &self,
+        unknown_reference: &str,
+        max_length_distance: usize,
+        max_edit_distance: usize,
+    ) -> Option<String> {
+        let best_internal_candidate = suggest_known_alternative(
+            unknown_reference,
+            self.internal_object_store.keys().cloned().collect(),
+            max_length_distance,
+            max_edit_distance,
+        );
+        let best_external_candidate = suggest_known_alternative(
+            unknown_reference,
+            self.external_object_store.keys().cloned().collect(),
+            max_length_distance,
+            max_edit_distance,
+        );
+        match (best_internal_candidate, best_external_candidate) {
+            (None, None) => None,
+            (None, Some((external, _score))) => Some(external.clone()),
+            (Some((internal, _score)), None) => Some(internal.clone()),
+            // very unlikely to happen, but just in case, we'll prefer
+            // suggesting internal references
+            (Some((internal, internal_score)), Some((external, external_score))) => {
+                if external_score > internal_score {
+                    Some(external.clone())
+                } else {
+                    Some(internal.clone())
+                }
+            }
         }
     }
 
@@ -246,4 +293,86 @@ pub fn get_from_import_path(pkg_name: String, relative_module_file_path: &Path) 
     import_components.extend(components);
 
     Ok(import_components.join("."))
+}
+
+pub fn suggest_known_alternative(
+    unknown_reference: &str,
+    alternatives: Vec<String>,
+    max_length_distance: usize,
+    max_edit_distance: usize,
+) -> Option<(String, usize)> {
+    let candidate_length = &unknown_reference.chars().count();
+    let mut candidates = alternatives
+        .iter()
+        .filter(|k| k.chars().count().abs_diff(*candidate_length) < max_length_distance)
+        .map(|k| (k.to_string().clone(), edit_distance(k, unknown_reference)))
+        .filter(|(_, score)| score < &max_edit_distance)
+        .collect::<Vec<(String, usize)>>();
+
+    candidates.sort_by(|a, b| a.1.cmp(&b.1));
+
+    candidates.first().cloned()
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::suggest_known_alternative;
+    use color_eyre::Result;
+
+    #[test]
+    fn suggest_alternatives_garbage() -> Result<()> {
+        let known_keys: Vec<String> = vec![
+            "test_pkg.bar.greet",
+            "test_pkg.bar.Greeter",
+            "test_pkg.bar.Greeter.greet",
+            "numpy.fft",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+        let unknown_ref = "asdfasdfasdfasdfasdf";
+
+        let suggested_ref = suggest_known_alternative(unknown_ref, known_keys, 5, 5);
+
+        assert_eq!(suggested_ref, None);
+        Ok(())
+    }
+
+    #[test]
+    fn suggest_alternatives_external() -> Result<()> {
+        let known_keys: Vec<String> = vec![
+            "test_pkg.bar.greet",
+            "test_pkg.bar.Greeter",
+            "test_pkg.bar.Greeter.greet",
+            "numpy.fft",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+        let unknown_ref = "nimpy.fft";
+
+        let suggested_ref = suggest_known_alternative(unknown_ref, known_keys, 5, 5);
+
+        assert_eq!(suggested_ref, Some(("numpy.fft".to_string(), 1)));
+        Ok(())
+    }
+    #[test]
+    fn suggest_alternatives_internal() -> Result<()> {
+        let known_keys: Vec<String> = vec![
+            "test_pkg.bar.greet",
+            "test_pkg.bar.Greeter",
+            "test_pkg.bar.Greeter.greet",
+            "numpy.fft",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+        let unknown_ref = "test_pkg.bar.great";
+
+        let suggested_ref = suggest_known_alternative(unknown_ref, known_keys, 5, 5);
+
+        assert_eq!(suggested_ref, Some(("test_pkg.bar.greet".to_string(), 1)));
+        Ok(())
+    }
 }

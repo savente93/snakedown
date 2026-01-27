@@ -512,6 +512,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "780955b8b195a21ab8e4ac6b60dd1dbdcec1dc6c51c0617964b08c81785e12c9"
 
 [[package]]
+name = "edit-distance"
+version = "2.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "324d428080b707bac399325341bd61af5ded1b30f33b7c949792ca464733c2d5"
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2143,6 +2149,7 @@ dependencies = [
  "color-eyre",
  "console",
  "dialoguer",
+ "edit-distance",
  "flate2",
  "lazy-regex",
  "pretty_assertions",

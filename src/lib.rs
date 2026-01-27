@@ -251,6 +251,7 @@ mod test {
         config_builder.exclude_paths(vec![
             PathBuf::from("test_pkg/excluded_file.py"),
             PathBuf::from("test_pkg/excluded_module"),
+            PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
         config_builder.add_external(
@@ -283,6 +284,7 @@ mod test {
         config_builder.exclude_paths(vec![
             PathBuf::from("test_pkg/excluded_file.py"),
             PathBuf::from("test_pkg/excluded_module"),
+            PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
         let config = config_builder.build()?;
@@ -310,11 +312,48 @@ mod test {
         config_builder.exclude_paths(vec![
             PathBuf::from("test_pkg/excluded_file.py"),
             PathBuf::from("test_pkg/excluded_module"),
+            PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
         let config = config_builder.build()?;
 
         render_docs(config).await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn render_test_pkg_suggests_correct_unknown_refs() -> Result<()> {
+        let temp_dir = assert_fs::TempDir::new()?;
+        let test_pkg_dir = PathBuf::from("tests/test_pkg");
+        let api_content_path = PathBuf::from("api/");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(true))
+            .with_ssg(Some(SSG::Markdown))
+            .with_skip_private(Some(true));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+        ]);
+
+        let config = config_builder.build()?;
+
+        let err = render_docs(config).await;
+
+        assert!(err.is_err());
+
+        // TODO: find a way to handle errors more nicely
+        // see also https://github.com/savente93/snakedown/issues/89
+        assert_eq!(
+            format!("{:?}", err),
+
+                "Err(Found 3 invalid references(s):\n[unknown reference: test_pkg.bar.great, in object test_pkg.miss_spelled_ref.the_little_function_that_could did you mean test_pkg.bar.greet?\n\nLocation:\n    src/indexing/index.rs:127:41, unknown reference: nimpy.fft, in object test_pkg.miss_spelled_ref.the_little_function_that_could did you mean numpy.fft?\n\nLocation:\n    src/indexing/index.rs:127:41, unknown reference: asdfasdfasdf, in object test_pkg.miss_spelled_ref.the_little_function_that_could\n\nLocation:\n    src/indexing/index.rs:134:41]\n\nLocation:\n    src/lib.rs:80:28)".to_string()
+
+        );
 
         Ok(())
     }
