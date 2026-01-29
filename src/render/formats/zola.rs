@@ -88,13 +88,18 @@ mod test {
 
     #[test]
     fn zola_internal_link_no_shortcode() -> Result<()> {
+        #[cfg(windows)]
+        let expected = r#"[Baz](@\foo.bar.baz.index.md)"#;
+        #[cfg(not(windows))]
+        let expected = r#"[Baz](@/foo.bar.baz.index.md)"#;
+
         assert_eq!(
             ZolaRenderer {}.render_reference(
                 Some("Baz".to_string()),
                 &PathBuf::from(""),
-                String::from("foo/bar/baz/index")
+                String::from("foo.bar.baz.index")
             )?,
-            r#"[Baz](@/foo/bar/baz/index.md)"#
+            expected
         );
         Ok(())
     }

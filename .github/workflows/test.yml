@@ -16,8 +16,11 @@ concurrency:
 name: test
 jobs:
   required:
-    runs-on: ubuntu-latest
-    name: suite
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: suite (${{ matrix.os }})
     steps:
       - uses: actions/checkout@v6
         with:
