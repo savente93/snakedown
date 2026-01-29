@@ -1,3 +1,2 @@
 [files]
-# changelog is geenrated automatically, we can't change that anymore
-extend-exclude = ["CHANGELOG.md"]
+extend-exclude = ["**/*.ipynb"]

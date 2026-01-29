@@ -57,6 +57,8 @@ pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
         .with_skip_undoc(skip_undoc)
         .with_skip_private(skip_private)
         .with_exclude(args.exclude)
+        .with_notebook_content_path(args.notebooks_content_path)
+        .with_notebook_path(args.notebooks_path)
         .with_ssg(args.ssg);
 
     config_builder = config_builder.merge(cli_args_builder);
@@ -127,11 +129,20 @@ pub struct CliArgs {
     #[arg(long, short)]
     pub site_root: Option<PathBuf>,
 
-    /// The path to where the output should be placed relative to the site_root
+    /// The path to where the api output should be placed relative to the site_root
     /// output will specifically be placed in `./<site_root>/<api_content_path>/`
     /// `api/` by default. If you want the output to be the site root set this to the empty string
     #[arg(long, short)]
     pub api_content_path: Option<PathBuf>,
+
+    /// The path to where the notbook output should be placed relative to the site_root
+    /// output will specifically be placed in `./<site_root>/<notebook_content_path>/`
+    /// `user-guide/` by default. If you want the output to be the site root set this to the empty string
+    #[arg(long)]
+    pub notebooks_content_path: Option<PathBuf>,
+
+    #[arg(long, short)]
+    pub notebooks_path: Option<PathBuf>,
 
     /// The path to the configuration file
     #[arg(long, short)]

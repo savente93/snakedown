@@ -23,8 +23,8 @@ All notable changes to this project will be documented in this file.
 - add general python object docs enum
 - move to flat output structure
 - add python builting as external default example
-- implment passing links to external inventory
-- implement passing optoins to renderers from config
+- implement passing links to external inventory
+- implement passing options to renderers from config
 - implement internal link rendering
 - implement external link rendering
 - allow config file passed through cli
@@ -49,9 +49,9 @@ All notable changes to this project will be documented in this file.
 - replace local zola site with git submodule
 - make generated links relative to site root
 - move prefix stripping from rendering to parsing
-- fix oder of compare_tree
+- fix order of compare_tree
 - remove prefix from docs extraction to rendering
-- remove sub_package_index from pakcage index struct
+- remove sub_package_index from package index struct
 - move indexing/{cache,fetch}.rs to their own mod
 - ignore snakedown cache in repo
 - fix just zola command
