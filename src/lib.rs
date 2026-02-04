@@ -131,8 +131,6 @@ mod test {
 
     use pretty_assertions::assert_eq;
     use std::collections::HashSet;
-    use std::fs;
-    use std::io::{self, Read};
 
     use color_eyre::eyre::{Result, WrapErr, bail, eyre};
     use walkdir::WalkDir;
@@ -214,29 +212,35 @@ mod test {
     }
 
     /// Compares the content of two files.
-    fn compare_files(expected: &Path, actual: &Path) -> io::Result<()> {
-        let mut file_expected = fs::File::open(expected)?;
-        let mut file_actual = fs::File::open(actual)?;
+    fn compare_files(expected: &Path, actual: &Path) -> Result<()> {
+        let buf_expected = std::fs::read(expected)?;
+        let buf_actual = std::fs::read(actual)?;
 
-        let mut buf_expected = String::new();
-        let mut buf_actual = String::new();
+        let expected_string_result = String::from_utf8(buf_expected.clone());
 
-        file_expected.read_to_string(&mut buf_expected)?;
-        file_actual.read_to_string(&mut buf_actual)?;
+        match expected_string_result {
+            Ok(mut expected_string) => {
+                let mut actual_string = String::from_utf8(buf_actual)?;
+                // to keep the tests compatible between windows, that uses \n\r
+                // for line-endings instead of \n like the rest of us, we just strip
+                // any \r from both reference and output
 
-        // to keep the tests compatible between windows, that uses \n\r
-        // for line-endings instead of \n like the rest of us, we just strip
-        // any \r from both reference and output
+                actual_string = actual_string.replace("\r\n", "\n");
+                expected_string = expected_string.replace("\r\n", "\n");
 
-        buf_actual = buf_actual.replace("\r\n", "\n");
-        buf_expected = buf_expected.replace("\r\n", "\n");
+                assert_eq!(
+                    expected_string,
+                    actual_string,
+                    "{} is different",
+                    expected.display()
+                );
+            }
+            Err(_) => {
+                // If we can't do string conversion we'll just fall back to arbitrary byte equality
 
-        assert_eq!(
-            buf_expected,
-            buf_actual,
-            "{} is different",
-            expected.display()
-        );
+                assert_eq!(buf_expected, buf_actual);
+            }
+        }
 
         Ok(())
     }
