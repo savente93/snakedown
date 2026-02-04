@@ -230,6 +230,17 @@ pub fn crawl_package(
     Ok(())
 }
 
+pub fn crawl_notebooks(index: &mut RawIndex, path: &Path) -> Result<()> {
+    for entry in WalkDir::new(path).into_iter() {
+        let path = entry?.into_path();
+        if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("ipynb") {
+            tracing::debug!("Indexing {}", &path.display());
+            index.index_notebook(&path)?;
+        }
+    }
+    Ok(())
+}
+
 /// will walk the provided path and index all the subpackages and modules
 /// # Errors
 /// Can error on fs errors

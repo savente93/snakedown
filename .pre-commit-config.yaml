@@ -24,7 +24,7 @@ repos:
     rev: v1.31.2
     hooks:
       - id: typos
-        args: []
+        args: ["--force-exclude"]
         stages: [pre-commit]
       - id: typos
         name: commit-msg-typos
