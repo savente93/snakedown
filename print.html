@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-8d4335c1.js";
+            window.path_to_searchindex_js = "searchindex-a60c42dd.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-6f6e8175.js"></script>
@@ -334,6 +334,12 @@ ssg = "Zola"
 <h2 id="linking"><a class="header" href="#linking">Linking</a></h2>
 <p>Snakedown introduces a lightweight syntax for linking to other objects that is inspired by the one that <a href="https://obsidian.md">Obsidian</a> uses, namelly <code>[[ fully.qualified.name ]]</code> this will then get turned into the correct link in whatever format your supported static site generator expects. For the moment only fully qualified references are supported, meaning that you can only reference them via their full import path. You can use this syntax anywhere in your docstrings.</p>
 <p>You can also provide some optional display text by using the <code>|</code> character like so: <code>[[ foo.bar.baz | The baz module]]</code> which will be used as the text for the generated link. If you do not provide any, the reference target name will be used (i.e. <code>[[ foo.bar ]]</code> will be changed to <code>[foo.bar](foo.bar.md)</code> but <code>[[ foo.bar | the bar module]]</code> would be changed to <code>[the bar module](foo.bar.md)</code>)</p>
+<h2 id="jupyter-notebooks"><a class="header" href="#jupyter-notebooks">Jupyter Notebooks</a></h2>
+<p>Snakedown now supports including the output of jupyter notebooks in your documentation. Currently only python notebooks are supported. This is more out of consistency because python is the only language we currently parse, so it doesn’t make much sense to allow for notebooks in other languages, however, this could change in the future.</p>
+<p>The output of a notebook being processed by snakedown will be a markdown file with the same file stem as the notebook. This will contain all the markdown cells included as is. Code cells will be included wrapped in a python code block. Output of supported formats will be included as well. If there is image data, this will be included as a colocated file which will be referenced in the output.</p>
+<p>We plan to add support for expanding references like in the section above, though likely only markdown cells will be expanded.</p>
+<h3 id="why-is-my-jupyter-notebook-output-not-showing-up"><a class="header" href="#why-is-my-jupyter-notebook-output-not-showing-up">Why is my Jupyter notebook output not showing up?</a></h3>
+<p>The Jupyter format can actually output a surprisng amount of different kinds of output, many of those we didn’t have an example case for, and as a general rule we don’t implement things we can’t verify the use of. However, if you have something that produces output we don’t support and are willing to share (a simplified version) so we can make sure it works properly, please open a feature request. The media types that our dependency support are listed <a href="https://docs.rs/jupyter-protocol/1.0.0/jupyter_protocol/media/enum.MediaType.html">here</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="using-supported-static-site-generators"><a class="header" href="#using-supported-static-site-generators">Using supported Static Site Generators</a></h1>
 <p>Snakedown knows how to produce output that some static site generators can work with, and provides at least one compatible theme to make customisation easier. Bellow are the static sites we can work with at the moment and some information on how to customise them.</p>
@@ -375,20 +381,26 @@ builtins = {name = "Python", url = "https://docs.python.org/3/"}
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="options"><a class="header" href="#options">Options</a></h1>
-<h2 id="api_content_path"><a class="header" href="#api_content_path">api_content_path</a></h2>
-<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the api docs are located. This is tracked separately because this needs to be reflected in the generated links (they need to be relative to the site root, not the current working directory for example).</p>
-<p>The full place where the docs will get placed is determined by joining <code>api_content_path</code> to <code>site_root</code>. Meaning that by default the docs will be placed in <code>./docs/api/</code>.</p>
-<p>Default value: <code>api</code></p>
-<h2 id="site_root"><a class="header" href="#site_root">site_root</a></h2>
-<p>The relative path from the current working directory where root of the docs site is located. For example when using a
-Zola site, this should be the path to the folder containing your <code>contents</code> folder and <code>config.toml</code> file.</p>
-<p>Default value: <code>docs</code></p>
 <h2 id="pkg_path"><a class="header" href="#pkg_path">pkg_path</a></h2>
 <p>The relative path from the current working directory to where the python package you want to document is located. This is the folder that snakedown will try to crawl and extract all documentation from.</p>
 <p>Default value: <code>.</code></p>
 <h2 id="skip_undoc"><a class="header" href="#skip_undoc">skip_undoc</a></h2>
 <p>Whether to skip undocumented objects (meaning ones that don’t have a docstring). If you set this to true, no page will be generated for these objects. If it is set to false, an empty page will be generated with just the signature.</p>
 <p>Default Value: <code>true</code></p>
+<h2 id="api_content_path"><a class="header" href="#api_content_path">api_content_path</a></h2>
+<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the api docs are located. This is tracked separately because this needs to be reflected in the generated links (they need to be relative to the site root, not the current working directory for example).</p>
+<p>The full place where the docs will get placed is determined by joining <code>api_content_path</code> to <code>site_root</code> along with whatever intermediate path is required for the SSG (e.g. for zola, this is <code>content</code>). Meaning that by default the docs will be placed in <code>./docs/api/</code> for makrdown and <code>./docs/content/api/</code> for zola.</p>
+<p>Default value: <code>api</code></p>
+<h2 id="notebook_path"><a class="header" href="#notebook_path">notebook_path</a></h2>
+<p>A path from the current working directory to a folder where notebooks are located that you want to be included.</p>
+<p>Default value: <code>examples</code></p>
+<h2 id="notebook_content_path"><a class="header" href="#notebook_content_path">notebook_content_path</a></h2>
+<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the output of the jupyter notebooks should be located, similar to (api_content_path)[#apicontentpath]</p>
+<p>Default value: <code>user-guide</code></p>
+<h2 id="site_root"><a class="header" href="#site_root">site_root</a></h2>
+<p>The relative path from the current working directory where root of the docs site is located. For example when using a
+Zola site, this should be the path to the folder containing your <code>contents</code> folder and <code>config.toml</code> file.</p>
+<p>Default value: <code>docs</code></p>
 <h2 id="skip_private"><a class="header" href="#skip_private">skip_private</a></h2>
 <p>Whether to skip private objects (meaning ones whose name starts with an <code>_</code> e.g. <code>_foo</code>) If you set this to true, no page will be generated for these objects. If it is set to false, an empty page will be generated with just the signature.</p>
 <p>Default Value: <code>true</code></p>

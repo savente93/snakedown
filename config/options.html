@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-8d4335c1.js";
+            window.path_to_searchindex_js = "../searchindex-a60c42dd.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-6f6e8175.js"></script>
@@ -175,20 +175,26 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="options"><a class="header" href="#options">Options</a></h1>
-<h2 id="api_content_path"><a class="header" href="#api_content_path">api_content_path</a></h2>
-<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the api docs are located. This is tracked separately because this needs to be reflected in the generated links (they need to be relative to the site root, not the current working directory for example).</p>
-<p>The full place where the docs will get placed is determined by joining <code>api_content_path</code> to <code>site_root</code>. Meaning that by default the docs will be placed in <code>./docs/api/</code>.</p>
-<p>Default value: <code>api</code></p>
-<h2 id="site_root"><a class="header" href="#site_root">site_root</a></h2>
-<p>The relative path from the current working directory where root of the docs site is located. For example when using a
-Zola site, this should be the path to the folder containing your <code>contents</code> folder and <code>config.toml</code> file.</p>
-<p>Default value: <code>docs</code></p>
 <h2 id="pkg_path"><a class="header" href="#pkg_path">pkg_path</a></h2>
 <p>The relative path from the current working directory to where the python package you want to document is located. This is the folder that snakedown will try to crawl and extract all documentation from.</p>
 <p>Default value: <code>.</code></p>
 <h2 id="skip_undoc"><a class="header" href="#skip_undoc">skip_undoc</a></h2>
 <p>Whether to skip undocumented objects (meaning ones that don’t have a docstring). If you set this to true, no page will be generated for these objects. If it is set to false, an empty page will be generated with just the signature.</p>
 <p>Default Value: <code>true</code></p>
+<h2 id="api_content_path"><a class="header" href="#api_content_path">api_content_path</a></h2>
+<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the api docs are located. This is tracked separately because this needs to be reflected in the generated links (they need to be relative to the site root, not the current working directory for example).</p>
+<p>The full place where the docs will get placed is determined by joining <code>api_content_path</code> to <code>site_root</code> along with whatever intermediate path is required for the SSG (e.g. for zola, this is <code>content</code>). Meaning that by default the docs will be placed in <code>./docs/api/</code> for makrdown and <code>./docs/content/api/</code> for zola.</p>
+<p>Default value: <code>api</code></p>
+<h2 id="notebook_path"><a class="header" href="#notebook_path">notebook_path</a></h2>
+<p>A path from the current working directory to a folder where notebooks are located that you want to be included.</p>
+<p>Default value: <code>examples</code></p>
+<h2 id="notebook_content_path"><a class="header" href="#notebook_content_path">notebook_content_path</a></h2>
+<p>The relative path from the site root (see <a href="#siteroot">site_root</a>) to where the output of the jupyter notebooks should be located, similar to (api_content_path)[#apicontentpath]</p>
+<p>Default value: <code>user-guide</code></p>
+<h2 id="site_root"><a class="header" href="#site_root">site_root</a></h2>
+<p>The relative path from the current working directory where root of the docs site is located. For example when using a
+Zola site, this should be the path to the folder containing your <code>contents</code> folder and <code>config.toml</code> file.</p>
+<p>Default value: <code>docs</code></p>
 <h2 id="skip_private"><a class="header" href="#skip_private">skip_private</a></h2>
 <p>Whether to skip private objects (meaning ones whose name starts with an <code>_</code> e.g. <code>_foo</code>) If you set this to true, no page will be generated for these objects. If it is set to false, an empty page will be generated with just the signature.</p>
 <p>Default Value: <code>true</code></p>
