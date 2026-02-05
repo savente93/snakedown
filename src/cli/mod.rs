@@ -24,6 +24,19 @@ pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
         config_builder = config_builder.merge(file_config_builder);
     }
 
+    let skip_write = match args.skip_write {
+        Some(sp) => {
+            if sp.skip_write {
+                Some(true)
+            } else if sp.no_skip_write {
+                Some(false)
+            } else {
+                unreachable!()
+            }
+        }
+        None => None,
+    };
+
     let skip_private = match args.skip_private {
         Some(sp) => {
             if sp.skip_private {
@@ -54,6 +67,7 @@ pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
         .with_api_content_path(args.api_content_path)
         .with_site_root(args.site_root)
         .with_pkg_path(args.pkg_path)
+        .with_skip_write(skip_write)
         .with_skip_undoc(skip_undoc)
         .with_skip_private(skip_private)
         .with_exclude(args.exclude)
@@ -78,6 +92,19 @@ pub fn discover_config_file(arg_config_path: Option<PathBuf>) -> Option<PathBuf>
     candidates
         .into_iter()
         .find(|candidate| candidate.exists() && candidate.is_file())
+}
+
+#[derive(Args, PartialEq, Eq, Debug)]
+#[group(multiple = false)]
+pub struct SkipWrite {
+    /// skip writing the rendered output to disk.
+    /// conflicts with --no-skip-write
+    #[arg(long)]
+    skip_write: bool,
+    /// write the rendered output to disk. (to override skip_write set in config)
+    /// conflicts with --skip-write
+    #[arg(long)]
+    no_skip_write: bool,
 }
 
 #[derive(Args, PartialEq, Eq, Debug)]
@@ -153,6 +180,9 @@ pub struct CliArgs {
 
     #[command(flatten)]
     pub skip_private: Option<SkipPrivate>,
+
+    #[command(flatten)]
+    pub skip_write: Option<SkipWrite>,
 
     /// Any files that should be excluded, can be file or directories and specific multiple times but currently globs are not supported
     #[arg(short, long)]
@@ -250,6 +280,7 @@ mod tests {
             "path/to/exclude2",
             "--ssg",
             "markdown",
+            "--skip-write",
             "-v",
             "-v",
         ]);
@@ -264,6 +295,13 @@ mod tests {
             Some(SkipUndoc {
                 skip_undoc: true,
                 no_skip_undoc: false
+            })
+        );
+        assert_eq!(
+            args.skip_write,
+            Some(SkipWrite {
+                skip_write: true,
+                no_skip_write: false
             })
         );
         assert_eq!(

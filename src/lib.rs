@@ -92,14 +92,18 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
 
     index.pre_process(&config.renderer, &config.api_content_path)?;
 
-    create_dir_all(&out_api_path)?;
+    if !config.skip_write {
+        create_dir_all(&out_api_path)?;
+    }
 
     for (key, object) in index.internal_object_store.iter() {
         let file_path = out_api_path.join(key).with_added_extension("md");
         let rendered = render_object(object, key.clone(), &config.renderer, &ctx)?;
         let rendered_trimmed = rendered.trim_start();
-        let mut file = File::create(file_path)?;
-        file.write_all(rendered_trimmed.as_bytes())?;
+        if !config.skip_write {
+            let mut file = File::create(file_path)?;
+            file.write_all(rendered_trimmed.as_bytes())?;
+        }
     }
 
     if let Some(notebook_path) = &config.notebook_path {
@@ -118,7 +122,9 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
                     .unwrap_or(notebook_path.clone()),
             )
         };
-        create_dir_all(&out_nb_path)?;
+        if !config.skip_write {
+            create_dir_all(&out_nb_path)?;
+        }
         for (key, cells) in index.notebook_store.iter() {
             let dir_path = out_nb_path.join(key);
             let file_path = dir_path.clone().join("index").with_added_extension("md");
@@ -134,18 +140,22 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
             if !rendered.text.ends_with("\n") {
                 rendered.text.push('\n');
             }
-            create_dir_all(dir_path.clone())?;
-            let mut file = File::create(file_path)?;
-            file.write_all(rendered.text.as_bytes())?;
-            for img in rendered.images {
-                let mut img_file = File::create(dir_path.join(img.name))?;
-                img_file.write_all(&img.data)?;
+
+            if !config.skip_write {
+                create_dir_all(dir_path.clone())?;
+                let mut file = File::create(file_path)?;
+                file.write_all(rendered.text.as_bytes())?;
+                for img in rendered.images {
+                    let mut img_file = File::create(dir_path.join(img.name))?;
+                    img_file.write_all(&img.data)?;
+                }
             }
         }
     }
 
     if let Some((index_file_path, index_file_content)) =
         &config.renderer.index_file(Some("API".to_string()))
+        && !config.skip_write
     {
         let mut file = File::create(out_api_path.join(index_file_path))?;
         file.write_all(index_file_content.as_bytes())?;
@@ -384,6 +394,34 @@ mod test {
     }
 
     #[tokio::test]
+    async fn render_test_pkg_docs_skip_write_exit_on_err() -> Result<()> {
+        let temp_dir = assert_fs::TempDir::new()?;
+        let test_pkg_dir = PathBuf::from("tests/test_pkg");
+        let api_content_path = PathBuf::from("api/");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(true))
+            .with_skip_write(Some(true))
+            .with_notebook_content_path(None)
+            .with_notebook_path(None)
+            .with_ssg(Some(SSG::Markdown))
+            .with_skip_private(Some(true));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+            PathBuf::from("test_pkg/miss_spelled_ref.py"),
+        ]);
+
+        let config = config_builder.build()?;
+
+        render_docs(config).await?;
+
+        Ok(())
+    }
+    #[tokio::test]
     async fn render_test_pkg_docs_exit_on_err() -> Result<()> {
         let temp_dir = assert_fs::TempDir::new()?;
         let test_pkg_dir = PathBuf::from("tests/test_pkg");
@@ -407,6 +445,41 @@ mod test {
         let config = config_builder.build()?;
 
         render_docs(config).await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn render_with_skip_write_does_not_write_files() -> Result<()> {
+        let temp_dir = assert_fs::TempDir::new()?;
+        let test_pkg_dir = PathBuf::from("tests/test_pkg");
+        let notebook_path = PathBuf::from("tests/test_notebooks/");
+        let api_content_path = PathBuf::from("api");
+        let notebook_content_path = PathBuf::from("notebooks/");
+        let mut config_builder = ConfigBuilder::default()
+            .init_with_defaults()
+            .with_pkg_path(Some(test_pkg_dir))
+            .with_api_content_path(Some(api_content_path.clone()))
+            .with_notebook_content_path(Some(notebook_content_path.clone()))
+            .with_site_root(Some(temp_dir.to_path_buf()))
+            .with_skip_undoc(Some(true))
+            .with_notebook_path(Some(notebook_path))
+            .with_ssg(Some(SSG::Markdown))
+            .with_skip_write(Some(true))
+            .with_skip_private(Some(true));
+        config_builder.exclude_paths(vec![
+            PathBuf::from("test_pkg/excluded_file.py"),
+            PathBuf::from("test_pkg/excluded_module"),
+            PathBuf::from("test_pkg/miss_spelled_ref.py"),
+        ]);
+
+        let config = config_builder.build()?;
+
+        render_docs(config).await?;
+
+        let number_of_files = std::fs::read_dir(temp_dir.path())?.count();
+
+        assert_eq!(number_of_files, 0);
 
         Ok(())
     }

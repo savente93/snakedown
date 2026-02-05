@@ -4,7 +4,6 @@ use std::{fs, path::Path};
 
 pub fn parse_notebook_file(path: &Path) -> Result<Vec<Cell>> {
     // Read the notebook file
-    dbg!(&path);
     let notebook_json = fs::read_to_string(path)?;
 
     // Parse the notebook
