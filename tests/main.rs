@@ -10,6 +10,33 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[test]
+fn test_skip_write_does_not_write() -> Result<()> {
+    let tempdir = tempdir()?;
+
+    let mut cmd = cargo_bin_cmd!();
+    cmd.arg("-p")
+        .arg("tests/test_pkg")
+        .arg("-s")
+        .arg(tempdir.path())
+        .arg("-e")
+        .arg("test_pkg/miss_spelled_ref.py")
+        .arg("-e")
+        .arg("test_pkg/excluded_file.py")
+        .arg("--exclude")
+        .arg("test_pkg/excluded_module")
+        .arg("--skip-write")
+        .arg("-vvv");
+    let assertion = cmd.assert();
+
+    assertion.success();
+
+    let number_of_files = std::fs::read_dir(tempdir.path())?.count();
+
+    assert_eq!(number_of_files, 0);
+
+    Ok(())
+}
+#[test]
 fn test_cli_with_all_options() -> Result<()> {
     let tempdir = tempdir()?;
 
@@ -36,8 +63,6 @@ fn test_cli_with_all_options() -> Result<()> {
 #[test]
 fn test_cli_with_zola() -> Result<()> {
     let tempdir = tempdir()?;
-
-    dbg!(std::env::current_dir()?);
 
     let tmp_dir_path = tempdir.path();
     let target_dir = tmp_dir_path.join("zola_test_site");

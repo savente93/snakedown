@@ -42,6 +42,7 @@ pub struct Config {
     pub exclude: Vec<PathBuf>,
     pub externals: HashMap<String, ExternalIndex>,
     pub notebook_path: Option<PathBuf>,
+    pub skip_write: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
@@ -67,6 +68,7 @@ pub struct ConfigBuilder {
     exclude: Option<Vec<PathBuf>>,
     externals: Option<HashMap<String, ExternalIndex>>,
     notebook_path: Option<PathBuf>,
+    skip_write: Option<bool>,
 }
 
 impl ConfigBuilder {
@@ -76,6 +78,7 @@ impl ConfigBuilder {
             .with_api_content_path(Some(PathBuf::from("api/")))
             .with_skip_undoc(Some(false))
             .with_skip_private(Some(false))
+            .with_skip_write(Some(false))
             .with_pkg_path(Some(PathBuf::from(".")))
             .with_exclude(Some(Vec::new()))
             .with_ssg(Some(SSG::Markdown))
@@ -97,6 +100,12 @@ impl ConfigBuilder {
     pub fn with_api_content_path(mut self, api_content_path: Option<PathBuf>) -> Self {
         if api_content_path.is_some() {
             self.api_content_path = api_content_path;
+        }
+        self
+    }
+    pub fn with_skip_write(mut self, skip_write: Option<bool>) -> Self {
+        if skip_write.is_some() {
+            self.skip_write = skip_write;
         }
         self
     }
@@ -209,6 +218,7 @@ impl ConfigBuilder {
             renderer,
             externals: external_linkings,
             notebook_path: self.notebook_path,
+            skip_write: self.skip_write.unwrap_or(false),
         })
     }
 
@@ -236,6 +246,10 @@ impl ConfigBuilder {
             self.skip_undoc = other.skip_undoc
         }
 
+        if other.skip_write.is_some() {
+            self.skip_write = other.skip_write
+        }
+
         if other.skip_private.is_some() {
             self.skip_private = other.skip_private
         }
@@ -249,6 +263,9 @@ impl ConfigBuilder {
         }
         if other.notebook_content_path.is_some() {
             self.notebook_content_path = other.notebook_content_path
+        }
+        if other.skip_write.is_some() {
+            self.skip_write = other.skip_write
         }
 
         if let Some(v) = other.exclude {
@@ -379,6 +396,7 @@ mod test {
     fn config_round_trip() -> Result<()> {
         let mut builder = ConfigBuilder::default()
             .with_skip_undoc(Some(false))
+            .with_skip_write(Some(true))
             .with_skip_private(Some(true));
 
         builder.exclude_paths(vec![PathBuf::from("asdf")]);
@@ -408,12 +426,14 @@ mod test {
             .with_pkg_path(Some(PathBuf::from("content")))
             .with_api_content_path(Some(PathBuf::from("bar/baz/apis")))
             .with_skip_undoc(Some(true))
+            .with_skip_write(None)
             .with_exclude(Some(vec![PathBuf::from("zxcv")]));
 
         let third = ConfigBuilder::default()
             .with_site_root(Some(PathBuf::from("_output")))
             .with_api_content_path(Some(PathBuf::from("foo/bar/apis")))
             .with_skip_private(Some(false))
+            .with_skip_write(Some(true))
             .with_pkg_path(Some(PathBuf::from("pkg")))
             .with_exclude(Some(vec![PathBuf::from("qwert")]))
             .with_ssg(Some(SSG::Zola));
@@ -423,6 +443,7 @@ mod test {
             .with_pkg_path(Some(PathBuf::from("pkg")))
             .with_api_content_path(Some(PathBuf::from("foo/bar/apis")))
             .with_skip_undoc(Some(true))
+            .with_skip_write(Some(true))
             .with_skip_undoc(Some(true))
             .with_skip_private(Some(false))
             .with_exclude(Some(vec![

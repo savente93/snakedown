@@ -3,6 +3,7 @@ site_root        = "docs"
 pkg_path         = "."
 skip_undoc       = false
 skip_private     = false
+skip_write       = false
 ssg              = "Markdown"
 exclude          = []
 

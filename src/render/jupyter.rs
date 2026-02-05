@@ -56,7 +56,6 @@ pub fn rank_media_types(media: &MediaType) -> usize {
 }
 
 pub fn render_jupyter_display_data(cell_nr: usize, data: Media) -> Result<Option<DecodedOutput>> {
-    dbg!(&data);
     let richest = data.richest(rank_media_types).map(|m| match m {
         MediaType::Svg(svg) => Ok(DecodedOutput::Image(DecodedDisplayData {
             name: PathBuf::from(cell_nr.to_string()).with_extension("svg"),
