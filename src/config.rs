@@ -43,6 +43,7 @@ pub struct Config {
     pub externals: HashMap<String, ExternalIndex>,
     pub notebook_path: Option<PathBuf>,
     pub skip_write: bool,
+    pub offline: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Default, Clone)]
@@ -69,6 +70,7 @@ pub struct ConfigBuilder {
     externals: Option<HashMap<String, ExternalIndex>>,
     notebook_path: Option<PathBuf>,
     skip_write: Option<bool>,
+    offline: Option<bool>,
 }
 
 impl ConfigBuilder {
@@ -188,6 +190,12 @@ impl ConfigBuilder {
         }
         self
     }
+    pub fn with_offline(mut self, offline: Option<bool>) -> Self {
+        if offline.is_some() {
+            self.offline = offline;
+        }
+        self
+    }
     pub fn build(self) -> Result<Config> {
         let renderer: Box<dyn Renderer> = match self.ssg {
             Some(SSG::Markdown) | None => Box::new(MdRenderer::new()),
@@ -219,6 +227,7 @@ impl ConfigBuilder {
             externals: external_linkings,
             notebook_path: self.notebook_path,
             skip_write: self.skip_write.unwrap_or(false),
+            offline: self.offline.unwrap_or(false),
         })
     }
 
@@ -243,33 +252,36 @@ impl ConfigBuilder {
         }
 
         if other.skip_undoc.is_some() {
-            self.skip_undoc = other.skip_undoc
+            self.skip_undoc = other.skip_undoc;
         }
 
         if other.skip_write.is_some() {
-            self.skip_write = other.skip_write
+            self.skip_write = other.skip_write;
         }
 
         if other.skip_private.is_some() {
-            self.skip_private = other.skip_private
+            self.skip_private = other.skip_private;
         }
 
         if other.ssg.is_some() {
-            self.ssg = other.ssg
+            self.ssg = other.ssg;
         }
 
         if other.notebook_path.is_some() {
-            self.notebook_path = other.notebook_path
+            self.notebook_path = other.notebook_path;
         }
         if other.notebook_content_path.is_some() {
-            self.notebook_content_path = other.notebook_content_path
+            self.notebook_content_path = other.notebook_content_path;
         }
         if other.skip_write.is_some() {
-            self.skip_write = other.skip_write
+            self.skip_write = other.skip_write;
+        }
+        if other.offline.is_some() {
+            self.offline = other.offline;
         }
 
         if let Some(v) = other.exclude {
-            self.exclude_paths(v)
+            self.exclude_paths(v);
         }
 
         self
