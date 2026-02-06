@@ -67,6 +67,7 @@ pub fn resolve_runtime_config(args: CliArgs) -> Result<ConfigBuilder> {
         .with_api_content_path(args.api_content_path)
         .with_site_root(args.site_root)
         .with_pkg_path(args.pkg_path)
+        .with_offline(args.offline)
         .with_skip_write(skip_write)
         .with_skip_undoc(skip_undoc)
         .with_skip_private(skip_private)
@@ -187,6 +188,10 @@ pub struct CliArgs {
     /// Any files that should be excluded, can be file or directories and specific multiple times but currently globs are not supported
     #[arg(short, long)]
     pub exclude: Option<Vec<PathBuf>>,
+
+    /// Do not download external references
+    #[arg(long)]
+    pub offline: Option<bool>,
 
     /// What format to render the front matter in, (zola, hugo, plain markdown, etc.)
     #[arg(long, value_enum)]

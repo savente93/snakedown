@@ -52,10 +52,20 @@ pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
 
     let cache_path = init_cache(None)?;
 
-    fill_cache(&config.externals).await?;
+    if config.offline {
+        tracing::info!("Skipping fetching external indexes because running in offline mode.")
+    } else {
+        fill_cache(&config.externals).await?;
+    }
 
     for (key, ext_index) in config.externals {
         let inv_path = cache_path.join("sphinx").join(key).with_extension("inv");
+
+        // TODO: This will be made more flexible once we add a permissive mode
+        // see https://github.com/savente93/snakedown/issues/38
+        if !inv_path.exists() && config.offline {
+            continue;
+        }
         let external_base_url = Url::parse(&ext_index.url)?;
 
         let inv_references = parse_objects_inv_file(&inv_path)?;
