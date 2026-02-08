@@ -1,0 +1,18 @@
+api_content_path = "api/"
+site_root        = "docs"
+pkg_path         = "tests/test_pkg"
+notebook_path = "tests/test_notebooks"
+notebook_content_path = "user-guide"
+skip_undoc       = false
+skip_private     = false
+skip_write       = true
+offline  = true
+ssg              = "Markdown"
+
+exclude          = ["tests/test_pkg/excluded_file.py", "tests/test_pkg/excluded_module/", "tests/test_pkg/miss_spelled_ref.py"]
+
+[externals]
+builtins = { name = "Python builtins", url = "https://docs.python.org/3/" }
+numpy    = { name = "Numpy", url = "https://numpy.org/doc/stable/" }
+scipy    = { name = "Scipy", url = "https://docs.scipy.org/doc/scipy/" }
+pandas   = { name = "Pandas", url = "https://pandas.pydata.org/pandas-docs/stable/" }

@@ -41,8 +41,7 @@ async fn main() -> Result<()> {
             tracing::debug!("runtime config: {:?}", runtime_config);
 
             let config_builder = default_config.merge(runtime_config);
-            let config = config_builder.build()?;
-            let _ = render_docs(config).await?;
+            let _ = render_docs(config_builder).await?;
         }
     };
 

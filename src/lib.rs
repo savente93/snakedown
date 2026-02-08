@@ -8,7 +8,7 @@ use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::path::PathBuf;
 
-use crate::config::Config;
+use crate::config::ConfigBuilder;
 use crate::fs::{crawl_notebooks, crawl_package};
 pub use crate::fs::{get_module_name, get_package_modules, walk_package};
 use crate::indexing::external::cache::init_cache;
@@ -26,7 +26,8 @@ use color_eyre::eyre::eyre;
 use tera::Context;
 use url::Url;
 
-pub async fn render_docs(config: Config) -> Result<Vec<PathBuf>> {
+pub async fn render_docs(config_builder: ConfigBuilder) -> Result<Vec<PathBuf>> {
+    let config = config_builder.build()?;
     let absolute_pkg_path = config.pkg_path.canonicalize()?;
     let out_api_path = if let Some(content_path) = config.renderer.content_path() {
         config
@@ -347,9 +348,8 @@ mod test {
             Some("numpy".to_string()),
             "https://numpy.org/doc/stable".to_string(),
         )?;
-        let config = config_builder.build()?;
 
-        render_docs(config).await?;
+        render_docs(config_builder).await?;
 
         assert_dir_trees_equal(
             expected_api_result_dir.as_path(),
@@ -387,9 +387,7 @@ mod test {
             PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
-        let config = config_builder.build()?;
-
-        render_docs(config).await?;
+        render_docs(config_builder).await?;
 
         assert_dir_trees_equal(
             expected_api_result_dir.as_path(),
@@ -425,9 +423,7 @@ mod test {
             PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
-        let config = config_builder.build()?;
-
-        render_docs(config).await?;
+        render_docs(config_builder).await?;
 
         Ok(())
     }
@@ -452,9 +448,7 @@ mod test {
             PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
-        let config = config_builder.build()?;
-
-        render_docs(config).await?;
+        render_docs(config_builder).await?;
 
         Ok(())
     }
@@ -483,9 +477,7 @@ mod test {
             PathBuf::from("test_pkg/miss_spelled_ref.py"),
         ]);
 
-        let config = config_builder.build()?;
-
-        render_docs(config).await?;
+        render_docs(config_builder).await?;
 
         let number_of_files = std::fs::read_dir(temp_dir.path())?.count();
 
@@ -512,9 +504,7 @@ mod test {
             PathBuf::from("test_pkg/excluded_module"),
         ]);
 
-        let config = config_builder.build()?;
-
-        let result = render_docs(config).await;
+        let result = render_docs(config_builder).await;
 
         // TODO: find a way to handle errors more nicely
         // see also https://github.com/savente93/snakedown/issues/89
