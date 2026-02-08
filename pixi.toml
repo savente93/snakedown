@@ -37,6 +37,13 @@ zola-serve-test-site  = "zola --root tests/zola_test_site serve"
 zola-serve-test-build = "zola --root tests/zola_test_site build"
 snakedown-build-zola  = "cargo r -- -p tests/test_pkg -s tests/zola_test_site -a api --notebooks-content-path user-guide -n tests/test_notebooks --ssg zola -e tests/test_pkg/excluded_file.py -e tests/test_pkg/excluded_module/ -e miss_spelled_ref.py -vvv"
 
+flamegraph  = "cargo flamegraph -- -c benchmark-config.toml"
+bench  = "cargo bench --profile bench"
+
+bench-baseline = "cargo bench --profile dev -- --save-baseline base"
+bench-compare = "cargo bench --profile bench -- --baseline base"
+
+
 zola-build = { depends-on = [
   "clean-zola-output",
   "snakedown-build-zola",
@@ -55,6 +62,7 @@ zola = { depends-on = [
 gh    = ">=2.83.2,<3"
 taplo = ">=0.10.0,<0.11"
 typos = ">=1.42.0,<2"
+perf = ">=1.6.0,<2"
 
 [feature.dev.tasks]
 typos-check = "typos ."
@@ -86,6 +94,7 @@ gh-create-pr             = "gh pr create --web --fill-first"
 
 pr = { depends-on = [
   "gh-check-existing-pr",
+    "lint-fix",
   "git-check-clean-worktree",
   "gh-create-pr",
 ] }
