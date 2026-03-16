@@ -32,7 +32,10 @@ pub async fn cache_remote_objects_inv(
     }
 
     let full_url = Url::parse(url)?.join("objects.inv")?;
-    let response = fetch_objects_inv_blocking(full_url).await?;
+    let response = fetch_objects_inv_blocking(full_url)
+        .await?
+        .error_for_status()?;
+
     let data = response.bytes().await?;
 
     let mut file = File::create(cache_path)?;
@@ -64,6 +67,31 @@ mod test {
 
     use crate::indexing::external::fetch::cache_remote_objects_inv;
 
+    #[tokio::test]
+    async fn fails_on_404_response() -> Result<()> {
+        let url = "https://pandas.pydata.org/pandas-docs/stable/";
+
+        let tmp_dir = TempDir::new()?;
+        let result = cache_remote_objects_inv(
+            url,
+            "asdf".to_string(),
+            Some(tmp_dir.path().to_path_buf()),
+            false,
+        )
+        .await;
+
+        assert!(result.is_err());
+
+        assert!(!exists(
+            tmp_dir
+                .path()
+                .join("sphinx")
+                .join("asdf")
+                .with_extension("inv")
+        )?);
+
+        Ok(())
+    }
     #[tokio::test]
     async fn cache_clean_numpy_obj_inv() -> Result<()> {
         let url = "https://numpy.org/doc/stable/objects.inv";

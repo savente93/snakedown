@@ -352,7 +352,7 @@ pub fn predefined_externals() -> HashMap<String, ExternalIndex> {
         "pandas".to_string(),
         ExternalIndex::new(
             Some("Pandas".to_string()),
-            "https://pandas.pydata.org/pandas-docs/stable".to_string(),
+            "https://pandas.pydata.org/docs/".to_string(),
         ),
     );
     externals.insert(
