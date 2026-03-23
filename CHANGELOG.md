@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## [0.3.1](https://github.com/savente93/snakedown/compare/v0.3.0...v0.3.1) - 2026-03-23
+
+### Fixed
+
+- non existent pandas link in 404 fetch test
+- add linking arg for flamegraph
+- abort on HTTP error when fetching cache
+
 ## [0.3.0](https://github.com/savente93/snakedown/compare/v0.2.0...v0.3.0) - 2026-02-08
 
 ### Added
