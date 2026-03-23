@@ -69,7 +69,7 @@ mod test {
 
     #[tokio::test]
     async fn fails_on_404_response() -> Result<()> {
-        let url = "https://pandas.pydata.org/pandas-docs/stable/";
+        let url = "https://github.com/pandas-dev/pandas/docs/stable";
 
         let tmp_dir = TempDir::new()?;
         let result = cache_remote_objects_inv(
